@@ -12,7 +12,7 @@ Use **H2 headings** for each priority, in priority order.
 - Description of the work
 - Expected behavior / outcome
 - Any constraints or design notes
-- Should be implementable and promotable into a `.spec.md`
+- Should be implementable and promotable into a `spec.md`
 
 ## Later
 Important work that needs refinement before implementation.
