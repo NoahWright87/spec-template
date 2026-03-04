@@ -39,6 +39,16 @@ The spec system grows to capture the team's actual conventions — not just the 
 
 While writing or reviewing specs, notice repeated corrections from the user. When the same pattern is corrected twice or more, suggest adding it as a new bullet in the Writing specs section of this file (`specs/AGENTS.md`). Capture team habits where agents will actually read them.
 
+## Incomplete specs
+
+When a spec section cannot be determined from available context, mark it with a `> **TODO:**` placeholder:
+
+```markdown
+> **TODO:** Why does this module exist? Who depends on it?
+```
+
+This format renders visibly in GitHub, is greppable (`> \*\*TODO\*\*`), and signals clearly that the section needs attention. Fill a placeholder whenever context allows — even a partial answer is better than leaving it blank. Run `/spec-backfill` at any time to scan for remaining placeholders and check overall spec completeness.
+
 ## Language
 
 Write specs in the affirmative. Describe what the system does. When a constraint is necessary, pair it with the positive form — "prefer X over Y" rather than "avoid Y." See [PHILOSOPHY.md](../PHILOSOPHY.md) for rationale.

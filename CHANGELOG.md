@@ -8,6 +8,13 @@ This file lists the current and previous versions, along with the features that 
 
 - *Add current progress here.*
 
+## v0.4
+
+- Add `/spec-backfill` command — bootstrap or improve specs mirroring the codebase; idempotent re-runs act as a completeness check
+- Add `> **TODO:**` placeholder convention — greppable, renders visibly in GitHub, tracked by `/spec-backfill`
+- Document placeholder convention in `specs/AGENTS.md`
+- Add `/spec-backfill` to managed files in `/respec`
+
 ## v0.3
 
 - Add GitHub Issues integration to `/intake` — pulls open issues, applies `intake:filed/rejected/ignore` labels

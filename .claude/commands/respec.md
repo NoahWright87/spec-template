@@ -107,6 +107,7 @@ These are the files this command installs and keeps current. Everything else in 
 | `specs/INTAKE.md` | Intake bucket for ideas and requests |
 | `.claude/commands/intake.md` | `/intake` command |
 | `.claude/commands/knock-out-todos.md` | `/knock-out-todos` command |
+| `.claude/commands/spec-backfill.md` | `/spec-backfill` command |
 | `.claude/commands/respec.md` | This command |
 
 ---
