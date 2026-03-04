@@ -1,20 +1,34 @@
 # spec-template
-Template repo for spec-driven development.
 
-## What this repo is for
-This repo is a starting point for projects that keep **specs as the source of truth**.
-Specs describe current behavior; code implements the specs.
+A minimal system for keeping specs as the source of truth in any repo. Works with Claude, Cursor, Copilot, or any LLM-powered IDE.
 
-## Spec structure
-- Specs live in `specs/` and mirror the source tree.
-- Every directory in `specs/` must include:
-	- `spec.md` (current, shippable spec)
-	- `spec.todo.md` (roadmap for that spec)
-- Additional specs in a directory are named `{feature}.spec.md` and use the same template.
-- Specs must include a **Related** section that links only to other specs (no TODO links).
+Read [PHILOSOPHY.md](PHILOSOPHY.md) for the thinking behind the design choices.
 
-## Split rule
-- If a spec grows beyond **300 lines**, it should be split.
-- If a spec reaches **500 lines**, it must be split.
+## Quick start
 
-See [AGENTS.md](AGENTS.md) and [specs/README.md](specs/README.md) for details.
+Paste this into your AI assistant from inside your repo:
+
+```markdown
+Read the file at `https://github.com/NoahWright87/spec-template/tree/main/.claude/commands/respec.md` and follow its instructions to apply the spec-template system to this repository.
+```
+
+The AI will fetch the `/respec` command, assess what already exists in your repo, and walk you through the setup interactively.
+
+**Claude users:** After the initial setup, run `/respec` any time to pull in upstream updates.
+
+**Other IDEs:** The same prompt works for updates too. The command file is plain markdown — paste it again or adapt it to your IDE's native format.
+
+## What gets installed
+
+| Path | Purpose |
+|------|---------|
+| `specs/` | Starter spec directory: templates, intake bucket, agent instructions |
+| `.claude/commands/respec.md` | Apply or update this template |
+| `.claude/commands/intake.md` | File ideas into the right spec |
+| `.claude/commands/knock-out-todos.md` | Implement the easiest open TODOs |
+
+See [specs/README.md](specs/README.md) and [AGENTS.md](AGENTS.md) for how the spec system works.
+
+## Opting out
+
+Delete `specs/` and remove `respec.md`, `intake.md`, and `knock-out-todos.md` from `.claude/commands/`. That's everything the template installed.

@@ -1,0 +1,55 @@
+# Specs — Agent Instructions
+
+This directory uses **spec-driven development**. Specs are the source of truth; code implements them.
+
+## Structure
+
+- Specs live in `specs/` and mirror the source tree.
+- Every directory in `specs/` includes:
+  - `spec.md` — current, shippable behavior
+  - `spec.todo.md` — future work and roadmap
+- Additional focused specs are named `{feature}.spec.md` and follow the same structure as `spec.md`.
+- Every spec includes a **Related** section linking to other spec files (not TODOs).
+
+## Workflow
+
+1. Start new work in `spec.todo.md`.
+2. Once a TODO item is implemented, promote its description into `spec.md`.
+3. Keep specs and code in sync — when behavior changes, update the spec alongside the code.
+
+## Writing specs
+
+- Describe behavior, not implementation
+- Be explicit where ambiguity could cause bugs
+- Keep specs short, readable, and skimmable
+- Future or uncommitted behavior belongs in `spec.todo.md`, not `spec.md`
+
+## Split rule
+
+Applies to both spec files and TODO spec files.
+
+- Split a spec when it grows past **300 lines**.
+- A spec at **500 lines** must be split before further work continues.
+- A single large or complex idea in `spec.todo.md` warrants its own `{feature}.todo.md` — use size thresholds as a guide, but also use judgment: if an idea has enough sub-concerns to benefit from its own space, extract it.
+- A refined `{feature}.todo.md` functions as a PRD or HLD, all in-repo. When implemented, it graduates to `{feature}.spec.md`.
+
+## Evolving conventions
+
+The spec system grows to capture the team's actual conventions — not just the template defaults.
+
+While writing or reviewing specs, notice repeated corrections from the user. When the same pattern is corrected twice or more, suggest adding it as a new bullet in the Writing specs section of this file (`specs/AGENTS.md`). Capture team habits where agents will actually read them.
+
+## Language
+
+Write specs in the affirmative. Describe what the system does. When a constraint is necessary, pair it with the positive form — "prefer X over Y" rather than "avoid Y." See [PHILOSOPHY.md](../PHILOSOPHY.md) for rationale.
+
+## Reminders
+
+- `spec.md` = current state — `spec.todo.md` = future plans — `{feature}.todo.md` = elaborated plans / PRDs
+- Completed items flow from todo → `spec.md` when implemented
+- Large ideas flow from `spec.todo.md` → their own `{feature}.todo.md` when they need room to grow
+- Write in the affirmative; pair every constraint with its positive form
+
+---
+
+*Installed by [spec-template](https://github.com/YOUR_USERNAME/spec-template).*

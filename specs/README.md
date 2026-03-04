@@ -23,6 +23,19 @@ Same structure as `spec.md`, just smaller in scope.
 Roadmap for future work related to its neighboring spec.
 Prioritized from top to bottom.
 
+### `{feature}.todo.md`
+Elaborated plan for a specific feature or idea — extracted from `spec.todo.md` when an item grows large or complex enough to warrant its own space. Functions as a PRD or HLD, all in-repo. When implemented, it graduates to `{feature}.spec.md`.
+
+INTAKE can seed a `{feature}.todo.md` directly when a submitted idea is substantial enough to open a refinement conversation rather than file as a simple bullet.
+
+## Split rule
+
+Applies to both spec files and TODO spec files.
+
+- Split when a file grows past **300 lines**.
+- A file at **500 lines** must be split before further work continues.
+- Use judgment for TODO files too: if a single idea has enough sub-concerns to benefit from its own space, extract it into `{feature}.todo.md` before hitting the line limits.
+
 ## Writing guidelines
 - Prefer **behavior over implementation**
 - Be explicit where ambiguity could cause bugs
