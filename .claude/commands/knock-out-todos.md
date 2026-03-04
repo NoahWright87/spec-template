@@ -44,7 +44,7 @@ Avoid items that:
 5. Mark each completed item done by editing its `.todo.md` file directly — change `- [ ]` to `- [x]` using the Edit tool. Then check whether the item has a `[#N](url)` GitHub issue prefix:
    - If yes and work is confirmed done: run `gh issue close N --comment "Implemented — see spec.md"` using the Bash tool.
    - If `gh` is unavailable or the close fails: note the issue number for the user to close manually.
-6. When complete, move the completed item description from `spec.todo.md` into the corresponding `spec.md` to reflect the current state of the codebase.
+6. When complete, move the completed item description from the relevant `.todo.md` file into the corresponding `spec.md` to reflect the current state of the codebase.
 7. Update `CHANGELOG.md` under `## WIP` with a concise summary of what was done (max ~5 bullets, brief).
 8. Run the appropriate build or validation command for the project to confirm changes compile and pass checks.
 

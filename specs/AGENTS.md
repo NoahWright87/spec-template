@@ -62,4 +62,4 @@ Write specs in the affirmative. Describe what the system does. When a constraint
 
 ---
 
-*Installed by [spec-template](https://github.com/YOUR_USERNAME/spec-template).*
+*Installed by [spec-template](https://github.com/NoahWright87/spec-template).*

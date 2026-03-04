@@ -4,14 +4,14 @@ Apply or refresh the [spec-template](https://github.com/NoahWright87/spec-templa
 
 This command handles three situations:
 1) A fresh repo with no specs yet
-2) an existing `specs/` folder that predates this template
+2) An existing `specs/` folder that predates this template
 3) A repo already running this template that needs updating.
 
 It detects which case applies and walks you through each step.
 
 **Non-Claude users:** This file is plain markdown. Read it and apply it in your tool of choice — the instructions are the same regardless of IDE.
 
-For the reasoning behind how this command is written, see [PHILOSOPHY.md](https://github.com/YOUR_USERNAME/spec-template/blob/main/PHILOSOPHY.md).
+For the reasoning behind how this command is written, see [PHILOSOPHY.md](https://github.com/NoahWright87/spec-template/blob/main/PHILOSOPHY.md).
 
 ---
 

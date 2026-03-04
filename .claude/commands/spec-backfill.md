@@ -108,7 +108,7 @@ For the area named in `$ARGUMENTS`:
 
 1. Read source files in that area. Understand what the module accepts, produces, and guarantees.
 2. Fill the Contract (Inputs, Outputs, Guarantees) and Behavior sections with what the code reveals.
-3. Where the code's behavior is clear but the *intent* is not, note it: `> **TODO:** Behavior observed, but intent unclear — verify with module owner.`
+3. Where the code's behavior is clear but the *intent* is unclear, note it: `> **TODO:** Behavior observed, but intent unclear — verify with module owner.`
 4. Deep mode is scoped to the named area only. A full-repo deep read is too slow and token-heavy to be useful.
 
 ---
