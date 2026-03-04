@@ -41,11 +41,16 @@ Avoid items that:
    - If the issue body is sparse and has no comments: check with the user before proceeding — ask if there is additional context or requirements to know about before starting.
 3. Read the relevant source files for the items you've chosen using the Read tool.
 4. Implement the changes using the Edit and Write tools.
-5. Mark each completed item done by editing its `.todo.md` file directly — change `- [ ]` to `- [x]` using the Edit tool. Then check whether the item has a `[#N](url)` GitHub issue prefix:
-   - If yes and work is confirmed done: run `gh issue close N --comment "Implemented — see spec.md"` using the Bash tool.
-   - If `gh` is unavailable or the close fails: note the issue number for the user to close manually.
+5. Mark each completed item done by editing its `.todo.md` file directly — change `- [ ]` to `- [x]` using the Edit tool. If the item has a `[#N](url)` GitHub issue prefix, note the issue number — collect all of them for the wrap-up step.
 6. When complete, move the completed item description from the relevant `.todo.md` file into the corresponding `spec.md` to reflect the current state of the codebase.
-7. Update `CHANGELOG.md` under `## WIP` with a concise summary of what was done (max ~5 bullets, brief).
+7. Update `CHANGELOG.md` under `## WIP` with a concise summary of what was done (max ~5 bullets, brief). If any completed items were GH-linked, output a ready-to-paste block at the end of your summary:
+
+   ```
+   To close linked issues on merge, add to your PR description:
+   closes #42
+   closes #17
+   ```
+
 8. Run the appropriate build or validation command for the project to confirm changes compile and pass checks.
 
 ## Preferred tools and actions
@@ -53,7 +58,7 @@ Avoid items that:
 - **Grep** — find TODO items and search source files for relevant code
 - **Read** — read source files for the items you've chosen before implementing
 - **Edit** and **Write** — make all code changes, mark TODOs as complete, move items to main spec, and update the CHANGELOG
-- **Bash** — `gh` calls only (`gh issue view` to read context, `gh issue close` when done); use the file tools above for all file operations
+- **Bash** — `gh` calls only (`gh issue view` to read context before implementing); use the file tools above for all file operations
 
 ## Style rules
 
@@ -66,3 +71,4 @@ Avoid items that:
 - `spec.md` = current state | `spec.todo.md` = future plans | INTAKE = entry point
 - Completed work belongs in `spec.md`, not in todo files — checked items left behind are migration debt
 - Items flow: INTAKE → `spec.todo.md` → `{feature}.todo.md` (if big) → `spec.md` (when done)
+- GH-linked items (`[#N]`): include `closes #N` in your PR description — GitHub closes the issue on merge
