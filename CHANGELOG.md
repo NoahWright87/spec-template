@@ -8,6 +8,11 @@ This file lists the current and previous versions, along with the features that 
 
 - *Add current progress here.*
 
+## v0.5
+
+- Add `.github/workflows/spec-check.yml` — PR check that warns when source files change without a corresponding spec update; informational only, never blocks merging
+- Add `spec-check.yml` to managed files in `/respec`
+
 ## v0.4
 
 - Add `/spec-backfill` command — bootstrap or improve specs mirroring the codebase; idempotent re-runs act as a completeness check
