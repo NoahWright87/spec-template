@@ -8,6 +8,10 @@ This file lists the current and previous versions, along with the features that 
 
 - *Add current progress here.*
 
+## v0.6.2
+
+- Rewrite `README.md` — human-friendly pitch, SpecKit comparison, commands overview, updated "What gets installed" table (adds `spec-backfill.md` and `spec-check.yml`)
+
 ## v0.6.1
 
 - Add `.claude/commands/README.md` — human-friendly guide to the commands with Mermaid flow diagrams; not installed into target repos
