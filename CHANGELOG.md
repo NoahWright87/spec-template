@@ -8,6 +8,10 @@ This file lists the current and previous versions, along with the features that 
 
 - *Add current progress here.*
 
+## v0.6.1
+
+- Add `.claude/commands/README.md` — human-friendly guide to the commands with Mermaid flow diagrams; not installed into target repos
+
 ## v0.6
 
 - Add `specs/deps/` directory — dep specs (outsider knowledge) + outbound TODO files for cross-repo work
