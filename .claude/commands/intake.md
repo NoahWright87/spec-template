@@ -25,12 +25,32 @@ When you have emptied the submissions section below, leave behind a single bulle
 
 - *Add your ideas here*.
 
+Items waiting for more information stay in this file with a date annotation: `*(waiting for response, asked YYYY-MM-DD)*`. Re-surface stale items after **7 days** with no reply — change this number to adjust the threshold. If the user asks to defer an item, annotate it as `*(snoozed until YYYY-MM-DD)*` and skip it until that date.
+
 ## Submissions
 
 - *Add your ideas here*.
 ```
 
 Then tell the user the file has been created and stop — there is nothing to process yet.
+
+## Step 0 — Check waiting and snoozed items
+
+Read `specs/INTAKE.md` and scan for items with date annotations before doing anything else.
+
+**For each item annotated `*(waiting for response, asked YYYY-MM-DD)*`:**
+1. If the item has a `[#N](url)` prefix, run `gh issue view N --json comments` and check whether any comments were posted after the asked date.
+2. New comments found → strip the annotation and re-add the item to the processing queue for this run.
+3. No new comments and older than **7 days** (default; see AGENTS Instructions to adjust) → add to the stale list. Surface in the Step 7 report: "Still waiting on #N (asked YYYY-MM-DD)."
+4. No new comments and within 7 days → skip silently.
+
+**For each item annotated `*(snoozed until YYYY-MM-DD)*`:**
+- Snooze date is in the future → skip entirely.
+- Snooze date has passed → strip the annotation and re-add to the processing queue.
+
+**During the run**, if the user says to defer a stale item ("we'll get to it in May", "ignore this for now"):
+- Update its annotation to `*(snoozed until YYYY-MM-DD)*` based on what they said.
+- Move on without posting to GH.
 
 ## Step 2 — Pull from GitHub Issues
 
@@ -46,7 +66,11 @@ Then tell the user the file has been created and stop — there is nothing to pr
 
 ## Step 3 — Read the Submissions
 
-Read `specs/INTAKE.md`. Extract every bullet under `## Submissions`, ignoring the placeholder `*Add your ideas here*` bullet. If the Submissions section is empty (only the placeholder), tell the user there is nothing to process and stop.
+Read `specs/INTAKE.md`. Extract every bullet under `## Submissions` that is not:
+- The placeholder `*Add your ideas here*`
+- A `*(waiting for response...)*` or `*(snoozed until...)*` item that was not re-queued in Step 0
+
+If nothing remains to process, tell the user and stop (include the Step 7 report if there were stale items to surface).
 
 ## Step 4 — Survey existing TODO spec files
 
@@ -54,60 +78,108 @@ Use Grep to find all `*.todo.md` files under `specs/`. Read their headings so yo
 
 ## Step 5 — Process each item
 
-For each submission item:
+For each item, determine which of three paths applies:
 
-1. **Determine the target spec file.** Match the item to the most relevant `*.todo.md` based on the component or area it describes. If the item spans multiple components, split it into one entry per relevant spec file.
+---
 
-2. **Check for duplicates.** Grep the target spec file for similar wording. If a near-identical item exists:
-   - Tell the user: "This item already exists in `<file>`: `<existing text>`."
-   - Ask if they want to add details or move it higher in priority before continuing.
+### Path 1 — Routed (clear intent, known target)
 
-3. **Clarify vague items.** If the item's intent is ambiguous — you cannot confidently determine what component it targets, what behavior is wanted, or which spec file it belongs in — ask the user a specific clarifying question before filing it. Always ask if intent is ambiguous!
+You can confidently identify the target `.todo.md` and the item is not a duplicate.
 
-4. **Determine placement.** Append new items to the end of the relevant spec file's unchecked TODO list. If the item seems high-priority based on context, add it higher in the file. Use your judgment.
+1. **Determine the target.** Match the item to the most relevant `.todo.md`. For work that needs to happen in a dependency, file it in `specs/deps/{repo}.todo.md` (create it if needed). If the item spans multiple components, split it into one entry per relevant file.
 
-5. **Format the TODO entry.** Write it as a `- [ ]` checkbox. For GH-sourced items (those with a `[#N](url)` prefix), preserve the link as a prefix to the description:
+2. **Format the entry.** Write it as a `- [ ]` checkbox. For GH-sourced items, preserve the issue link as a prefix:
    ```
    - [ ] [#42](url) Description of what needs to happen
    ```
-   For manual items, write a concise, actionable description. Expand vague language into clear implementation intent. If the original submission contains multiple sub-bullets, preserve them as indented sub-bullets under the main checkbox.
+   For manual items, write a concise, actionable description. If the submission has sub-bullets, preserve them as indented sub-bullets.
 
-6. **Create the spec file if missing.** If no suitable `*.todo.md` exists for the item, create one at an appropriate path under `specs/` (mirroring the code hierarchy if it already exists). Use this minimal template:
+3. **Create the spec file if missing.** Use this minimal template:
+   ```markdown
+   # <Component/Area/Dep Name> — TODOs
 
-```markdown
-# <Component/Area/Page/Class Name> — TODOs
+   - [ ] <first item>
+   ```
+   For dep TODOs, see `specs/deps/README.md` for the recommended template.
 
-- [ ] <first item>
-```
+4. **Apply a GitHub label** if the item has a `[#N](url)` prefix:
+   - **Filed:** `gh issue edit N --add-label "intake:filed"`
+   - **User rejects the idea:** `gh issue edit N --add-label "intake:rejected"` — skip filing
+   - **User says leave it alone:** `gh issue edit N --add-label "intake:ignore"` — skip filing
 
-7. **Apply a GitHub label** if the item has a `[#N](url)` prefix:
-   - **Filed successfully:** `gh issue edit N --add-label "intake:filed"`
-   - **User rejects the idea:** `gh issue edit N --add-label "intake:rejected"` — skip filing, do not write it to any spec file
-   - **User says leave it alone (by-human-for-human):** `gh issue edit N --add-label "intake:ignore"` — skip filing
+5. **Clear from INTAKE.md** (handled in Step 6).
 
-## Step 6 — Clear INTAKE.md
+---
 
-After all items are filed, update `specs/INTAKE.md` so the Submissions section contains only the placeholder:
+### Path 2 — Duplicate+boost (near-identical item already exists)
 
-```markdown
-## Submissions
+You find an existing TODO item that covers the same ground.
 
-- *Add your ideas here*.
-```
+1. **Find the existing item.** Grep the relevant spec file for similar wording. Show the user what you found: "This item already exists in `<file>`: `<existing text>`."
+
+2. **Boost the existing item:**
+   - Append any new details from the duplicate as a sub-bullet on the existing item.
+   - If the duplicate has a GH issue, link it as an additional sub-bullet: `  - Also requested: [#N](url)`
+   - If this item has now been duplicated multiple times, ask the user whether it should be promoted to a higher section (e.g. Backlog → Later → Sooner). Move it only with user approval.
+
+3. **Apply `intake:filed`** to the duplicate GH issue (if applicable).
+
+4. **Clear from INTAKE.md** (handled in Step 6).
+
+---
+
+### Path 3 — Needs more info (ambiguous routing, missing requirements, low confidence)
+
+You cannot confidently route the item without additional context.
+
+1. **Do not apply any GH label yet.**
+
+2. **Post a comment on the GH issue**, clearly marked as from Claude — not the user:
+   ```
+   *Posted by Claude via /intake — this is an automated message, not a human response.*
+
+   To route this issue I need a bit more information:
+   [1–3 specific questions]
+
+   My best routing guess: [target file or component] (confidence: low/medium — reason)
+
+   Reply here and re-run `/intake` to proceed.
+   ```
+   If a human was present in the chat during this run and discussion happened: summarize that conversation in the comment before the questions, then post. This keeps GH as the canonical record even for supervised runs.
+
+   For items with no GH issue (manual submissions): ask the user directly in chat instead.
+
+3. **Annotate the item** in INTAKE.md by appending `*(waiting for response, asked YYYY-MM-DD)*` (use today's date).
+
+4. **Leave it in INTAKE.md** — do not clear it in Step 6.
+
+---
+
+## Step 6 — Selective clearing of INTAKE.md
+
+After all items are processed, update `specs/INTAKE.md`:
+- **Remove** items that were routed (Path 1) or duplicate+boosted (Path 2).
+- **Leave** items annotated `*(waiting for response...)*` or `*(snoozed until...)*` exactly as they are.
+- Ensure the Submissions section always ends with the placeholder bullet if it would otherwise be empty:
+  ```markdown
+  - *Add your ideas here*.
+  ```
 
 ## Step 7 — Report
 
 Give the user a brief summary:
 - Which items were filed and where.
-- Any items that were split across multiple spec files.
-- Any duplicates found.
-- Any spec files that were newly created.
+- Any items split across multiple spec files.
+- Any duplicates found and how they were boosted.
+- Any spec files newly created.
+- **Waiting:** any items newly marked as waiting for more info (with the GH link).
+- **Stale:** any items that have been waiting longer than 7 days with no reply.
 - **GitHub:** which issues were labeled and how. If `gh` was unavailable, note it here.
 
 ## Preferred tools
 
 - **Read** — read INTAKE.md and existing spec files
 - **Grep** — find existing TODO spec files and check for duplicate entries
-- **Edit** — update spec files and clear INTAKE.md
+- **Edit** — update spec files and INTAKE.md annotations
 - **Write** — create new spec files or INTAKE.md if missing
-- **Bash** — `gh` CLI calls only (auth check, issue list, issue edit); use the file tools above for all file operations
+- **Bash** — `gh` CLI calls only (auth check, issue list, issue view, issue edit, issue comment); use the file tools above for all file operations

@@ -8,6 +8,17 @@ This file lists the current and previous versions, along with the features that 
 
 - *Add current progress here.*
 
+## v0.6
+
+- Add `specs/deps/` directory — dep specs (outsider knowledge) + outbound TODO files for cross-repo work
+- Add 3-way intake routing to `/intake`: Routed / Duplicate+boost / Needs more info
+- Add Step 0 to `/intake`: check waiting items (date-annotated), re-process on new comments, re-surface stale items after 7 days (configurable), support snooze annotations
+- Add comment-as-question escape hatch: `/intake` posts to GH issues when it can't route, clearly marked as from Claude
+- Update `/knock-out-todos` with dep TODO flow: opening downstream GH issues + cross-linking
+- Update `/knock-out-todos` with dep sub-bullet reconciliation: checks downstream issue status before implementing
+- Add `specs/deps/README.md` to managed files in `/respec`
+- Issue #1 labeled `intake:filed`
+
 ## v0.5
 
 - Add `.github/workflows/spec-check.yml` — PR check that warns when source files change without a corresponding spec update; informational only, never blocks merging

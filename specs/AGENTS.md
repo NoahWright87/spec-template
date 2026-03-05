@@ -49,6 +49,17 @@ When a spec section cannot be determined from available context, mark it with a 
 
 This format renders visibly in GitHub, is greppable (`> \*\*TODO\*\*`), and signals clearly that the section needs attention. Fill a placeholder whenever context allows — even a partial answer is better than leaving it blank. Run `/spec-backfill` at any time to scan for remaining placeholders and check overall spec completeness.
 
+## Dependency specs
+
+The `specs/deps/` directory holds specs and outbound TODO files for repositories this project depends on.
+
+- `specs/deps/{name}.spec.md` — outsider knowledge: what the dep does from our perspective, why we use it, how we interface with it, owner, known quirks. Written for routing, not integration docs.
+- `specs/deps/{name}.todo.md` — outbound work items; "implementing" one means opening a GitHub issue in that repo. `/knock-out-todos` opens the downstream issue and records it as a sub-bullet on the TODO item.
+- Sub-bullet format for cross-repo issues: `  - [{repo}#{N}](url)` — added by `/knock-out-todos` after opening the downstream issue.
+- When all sub-bullet issues are closed, the main item is unblocked. Once validated, move it to `spec.md` and drop the sub-bullets — they are implementation history, not current state.
+
+See [`deps/README.md`](deps/README.md) for templates.
+
 ## Language
 
 Write specs in the affirmative. Describe what the system does. When a constraint is necessary, pair it with the positive form — "prefer X over Y" rather than "avoid Y." See [PHILOSOPHY.md](../PHILOSOPHY.md) for rationale.

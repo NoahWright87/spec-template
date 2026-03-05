@@ -28,6 +28,9 @@ Elaborated plan for a specific feature or idea — extracted from `spec.todo.md`
 
 INTAKE can seed a `{feature}.todo.md` directly when a submitted idea is substantial enough to open a refinement conversation rather than file as a simple bullet.
 
+### `deps/`
+Specs and outbound TODO files for repositories this project depends on. Each dep gets a `{name}.spec.md` (outsider knowledge — what it does from our perspective, why we use it) and optionally a `{name}.todo.md` (work items that need to happen in that repo). See [`deps/README.md`](deps/README.md) for templates and the full pattern.
+
 ## Split rule
 
 Applies to both spec files and TODO spec files.

@@ -14,6 +14,8 @@ When you have emptied the submissions section below, leave behind a single bulle
 - *Add your ideas here*.
 ```
 
+Items waiting for more information stay in this file with a date annotation: `*(waiting for response, asked YYYY-MM-DD)*`. Re-surface stale items after **7 days** with no reply — change this number to adjust the threshold. If the user asks to defer an item, annotate it as `*(snoozed until YYYY-MM-DD)*` and skip it until that date.
+
 ## Submissions
 
 - *Add your ideas here*.

@@ -34,15 +34,26 @@ Avoid items that:
 ## Workflow
 
 1. Read all unchecked TODOs using Grep. Scan quickly — you do not need to read every spec file in full.
-2. For each chosen item that has a `[#N](url)` GitHub issue prefix, fetch the issue details before doing anything else:
+
+2. For each chosen item, check its context before doing anything else:
+
+   **If the item is in `specs/deps/`** — "implementing" this item means opening a downstream GitHub issue, not writing product code. Follow the [Dep TODO flow](#dep-todo-flow) below instead of the standard steps.
+
+   **If the item has dep sub-bullets** (indented lines in the form `  - [{repo}#{N}](url)`):
+   - Check the status of each: `gh issue view N --repo {owner}/{repo} --json state,title`
+   - Any sub-bullet issue still open → item is blocked. Note it and skip — report the blocker to the user.
+   - All sub-bullet issues closed → item is unblocked. Proceed with implementation or validation.
+
+   **If the item has a `[#N](url)` GitHub issue prefix** — fetch details:
    - Run `gh issue view N --json title,body,comments` using the Bash tool.
-   - Read the body and any comments for additional context, acceptance criteria, design decisions, or unresolved questions left by other contributors.
-   - If the issue has meaningful detail or discussion: incorporate that context into the implementation plan.
-   - If the issue body is sparse and has no comments: check with the user before proceeding — ask if there is additional context or requirements to know about before starting.
+   - Read the body and any comments for additional context, acceptance criteria, or unresolved questions.
+   - Meaningful detail or discussion → incorporate it into the implementation plan.
+   - Sparse body with no comments → check with the user before proceeding.
+
 3. Read the relevant source files for the items you've chosen using the Read tool.
 4. Implement the changes using the Edit and Write tools.
 5. Mark each completed item done by editing its `.todo.md` file directly — change `- [ ]` to `- [x]` using the Edit tool. If the item has a `[#N](url)` GitHub issue prefix, note the issue number — collect all of them for the wrap-up step.
-6. When complete, move the completed item description from the relevant `.todo.md` file into the corresponding `spec.md` to reflect the current state of the codebase.
+6. When complete, move the completed item description from the relevant `.todo.md` file into the corresponding `spec.md` to reflect the current state of the codebase. Drop any dep sub-bullets when promoting — they are implementation history, not current state.
 7. Update `CHANGELOG.md` under `## WIP` with a concise summary of what was done (max ~5 bullets, brief). If any completed items were GH-linked, output a ready-to-paste block at the end of your summary:
 
    ```
@@ -53,12 +64,30 @@ Avoid items that:
 
 8. Run the appropriate build or validation command for the project to confirm changes compile and pass checks.
 
+---
+
+## Dep TODO flow
+
+When a chosen item lives in `specs/deps/{repo}.todo.md`, follow this flow instead of the standard implementation steps:
+
+1. Draft a GitHub issue from the TODO description. Write the title and body so the target repo has enough context to act on it independently — don't assume they know this repo's internals.
+2. Open the issue: `gh issue create --repo {owner}/{repo} --title "..." --body "..."`
+3. Add a sub-bullet to the local TODO item:
+   ```
+   - [ ] [#local](url) Description
+     - [{repo}#{N}]({url}) Downstream issue opened
+   ```
+4. Cross-link both issues with comments for traceability:
+   - On the local issue: `gh issue comment {local-N} --body "Downstream issue opened in {repo}: [{repo}#{N}]({url})"`
+   - On the downstream issue: `gh issue comment {dep-N} --repo {owner}/{repo} --body "Opened on behalf of [{this-repo}#{local-N}]({url})"`
+5. Leave the TODO as `- [ ]` — it stays open until the downstream issue is closed. Sub-bullet reconciliation (step 2 above) will unblock it on the next run.
+
 ## Preferred tools and actions
 
 - **Grep** — find TODO items and search source files for relevant code
 - **Read** — read source files for the items you've chosen before implementing
 - **Edit** and **Write** — make all code changes, mark TODOs as complete, move items to main spec, and update the CHANGELOG
-- **Bash** — `gh` calls only (`gh issue view` to read context before implementing); use the file tools above for all file operations
+- **Bash** — `gh` calls only (`gh issue view` to read context and check dep status, `gh issue create` to open downstream dep issues, `gh issue comment` to cross-link); use the file tools above for all file operations
 
 ## Style rules
 
