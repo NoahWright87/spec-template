@@ -36,7 +36,7 @@ Layer 2 of the spec-template system — completely optional. A Docker container 
 
 ### Execution flow (`entrypoint.sh`)
 
-1. Validate required env vars (`ANTHROPIC_API_KEY`, `GITHUB_TOKEN`, `TARGET_REPO`)
+1. Validate required env vars (`GITHUB_TOKEN`, `TARGET_REPO`); detect auth mode: API key (`ANTHROPIC_API_KEY` set) or subscription (`~/.claude` mounted) — exits with a helpful message if neither is present
 2. Authenticate `gh` CLI with `GITHUB_TOKEN`
 3. Clone target repo, or `fetch` + `reset --hard` for updates
 4. **Scaffold detection:** check for `specs/AGENTS.md` in the workspace

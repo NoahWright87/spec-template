@@ -38,7 +38,9 @@ RUN mkdir -p /worker/workspace /worker/state
 VOLUME /worker/state
 
 # ── Runtime secrets and parameters (supplied at container start, never baked in)
-# Required secrets  — ANTHROPIC_API_KEY, GITHUB_TOKEN
+# Auth (choose one) — ANTHROPIC_API_KEY (API key mode)
+#                     OR mount ~/.claude from host: -v ~/.claude:/root/.claude (subscription mode)
+# Required secrets  — GITHUB_TOKEN
 # Required params   — TARGET_REPO (e.g. "owner/repo")
 # Optional params   — TARGET_BRANCH (default: main)
 #                     CLAUDE_CONFIG_PATH (default: .claude — relative to repo root)

@@ -32,10 +32,10 @@ if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
     echo "[worker] Auth mode: API key"
 else
     echo "[worker] Auth mode: Claude Code subscription (expecting mounted ~/.claude credentials)"
-    if [ ! -f "/root/.claude/credentials.json" ] && [ ! -d "/root/.claude" ]; then
-        echo "[worker] WARNING: No ANTHROPIC_API_KEY set and no ~/.claude directory found."
-        echo "[worker]          Mount your host credentials: -v ~/.claude:/root/.claude"
-        echo "[worker]          Or set ANTHROPIC_API_KEY for API key auth."
+    if [ ! -d "/root/.claude" ]; then
+        echo "[worker] ERROR: No ANTHROPIC_API_KEY set and no ~/.claude directory mounted."
+        echo "[worker]        Mount your host credentials: -v ~/.claude:/root/.claude:ro"
+        echo "[worker]        Or set ANTHROPIC_API_KEY for API key auth."
         exit 1
     fi
 fi

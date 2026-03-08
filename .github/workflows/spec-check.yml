@@ -116,7 +116,7 @@ jobs:
           script: |
             const marker = '<!-- spec-coverage-check -->';
             const hasUncovered = '${{ steps.check.outputs.has_uncovered }}' === 'true';
-            const raw = `${{ steps.check.outputs.uncovered_list }}`;
+            const raw = ${{ toJSON(steps.check.outputs.uncovered_list) }};
             const uncovered = raw.trim() ? raw.trim().split('\n') : [];
 
             let body;
