@@ -18,6 +18,12 @@ This file lists the current and previous versions, along with the features that 
 - Switch TODO item format from `- [ ]` checkboxes to plain `- ` bullets; update `/knock-out-todos` accordingly (remove Step 0 orphan scan, new grep pattern, remove → promote flow instead of check-then-move)
 - Add `PHILOSOPHY.md` proximity section — explains how format affords behavior and the checkbox incident as a concrete example
 - Add `/respec` Update step 5 — detects TODO format changes and offers to migrate existing TODO files; applies only with user approval
+- Fix bootstrap PR deduplication: use deterministic branch name `scaffold/bootstrap`; check for open PR before creating a new one
+- Fix install mode file copy: use `rsync --ignore-existing` so existing repo files are never overwritten
+- Fix `/intake` Path 1 entry format: plain `- ` bullets instead of `- [ ]` checkboxes
+- Fix dep TODO template: plain bullets in `scaffold/specs/deps/README.md`
+- Pin `@anthropic-ai/claude-code` to `2.1.71` in Dockerfile to reduce supply chain risk; add `rsync` to system deps
+- Remove undocumented/unimplemented `EXECUTION_MODE` param from Dockerfile and spec
 
 ## v0.6.2
 

@@ -70,12 +70,20 @@ fi
 # The next cron run will find the scaffold (once the PR is merged) and operate normally.
 
 if [ "$WORKER_MODE" = "install" ]; then
-    BRANCH="scaffold/bootstrap-$(date +%Y%m%d-%H%M%S)"
+    BRANCH="scaffold/bootstrap"
+
+    # Check for an already-open bootstrap PR to avoid creating duplicates on repeated runs
+    existing_pr=$(gh pr list --repo "$TARGET_REPO" --head "$BRANCH" --state open --json number --jq '.[0].number' 2>/dev/null || true)
+    if [ -n "$existing_pr" ]; then
+        echo "[worker] Bootstrap PR #$existing_pr already open — skipping. Run complete."
+        exit 0
+    fi
+
     echo "[worker] Creating branch: $BRANCH"
     git -C "$WORKSPACE" checkout -b "$BRANCH"
 
-    echo "[worker] Copying scaffold from $DIST_DIR..."
-    cp -r "$DIST_DIR/." "$WORKSPACE/"
+    echo "[worker] Copying scaffold from $DIST_DIR (non-destructive — existing files preserved)..."
+    rsync -a --ignore-existing "$DIST_DIR/" "$WORKSPACE/"
 
     echo "[worker] Committing scaffold files..."
     git -C "$WORKSPACE" add .

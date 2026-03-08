@@ -88,9 +88,9 @@ You can confidently identify the target `.todo.md` and the item is not a duplica
 
 1. **Determine the target.** Match the item to the most relevant `.todo.md`. For work that needs to happen in a dependency, file it in `specs/deps/{repo}.todo.md` (create it if needed). If the item spans multiple components, split it into one entry per relevant file.
 
-2. **Format the entry.** Write it as a `- [ ]` checkbox. For GH-sourced items, preserve the issue link as a prefix:
+2. **Format the entry.** Write it as a plain `- ` bullet. For GH-sourced items, preserve the issue link as a prefix:
    ```
-   - [ ] [#42](url) Description of what needs to happen
+   - [#42](url) Description of what needs to happen
    ```
    For manual items, write a concise, actionable description. If the submission has sub-bullets, preserve them as indented sub-bullets.
 
@@ -98,7 +98,7 @@ You can confidently identify the target `.todo.md` and the item is not a duplica
    ```markdown
    # <Component/Area/Dep Name> — TODOs
 
-   - [ ] <first item>
+   - <first item>
    ```
    For dep TODOs, see `specs/deps/README.md` for the recommended template.
 

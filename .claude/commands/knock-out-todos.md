@@ -24,7 +24,7 @@ Avoid items that:
 
 ## Workflow
 
-1. Read all unchecked TODOs using Grep. Scan quickly — you do not need to read every spec file in full.
+1. Read all open TODO items using Grep. Scan quickly — you do not need to read every spec file in full.
 
 2. For each chosen item, check its context before doing anything else:
 

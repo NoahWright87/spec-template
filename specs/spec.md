@@ -19,7 +19,7 @@ A two-product system for spec-driven development: an installable scaffold that g
 
 **Layer 2 — Autonomous worker:**
 - Runtime secrets: `ANTHROPIC_API_KEY`, `GITHUB_TOKEN` (injected at container start)
-- Runtime parameters: `TARGET_REPO` (required), `TARGET_BRANCH` (default: `main`), `EXECUTION_MODE`, `CLAUDE_CONFIG_PATH`
+- Runtime parameters: `TARGET_REPO` (required), `TARGET_BRANCH` (default: `main`), `CLAUDE_CONFIG_PATH`
 
 ### Outputs
 

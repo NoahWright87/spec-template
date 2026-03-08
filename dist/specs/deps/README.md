@@ -32,7 +32,7 @@ The `deps/` directory holds specs and outbound TODO files for repositories this 
 Work that needs to happen in [{dep name}]({github url}).
 "Implementing" a TODO here means opening a GitHub issue in that repo.
 
-- [ ] [#local-issue](url) Description of what needs to happen in {dep name}
+- [#local-issue](url) Description of what needs to happen in {dep name}
   - [{dep-name}#{N}]({url}) ← downstream issue, added by /knock-out-todos once opened
 ```
 

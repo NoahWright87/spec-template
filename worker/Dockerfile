@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     jq \
+    rsync \
     && rm -rf /var/lib/apt/lists/*
 
 # ── GitHub CLI ─────────────────────────────────────────────────────────────────
@@ -18,7 +19,7 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Claude Code CLI ────────────────────────────────────────────────────────────
-RUN npm install -g @anthropic-ai/claude-code
+RUN npm install -g @anthropic-ai/claude-code@2.1.71
 
 # ── Worker runtime files ───────────────────────────────────────────────────────
 WORKDIR /worker
@@ -40,7 +41,6 @@ VOLUME /worker/state
 # Required secrets  — ANTHROPIC_API_KEY, GITHUB_TOKEN
 # Required params   — TARGET_REPO (e.g. "owner/repo")
 # Optional params   — TARGET_BRANCH (default: main)
-#                     EXECUTION_MODE (default: full — runs intake then knock-out-todos)
 #                     CLAUDE_CONFIG_PATH (default: .claude — relative to repo root)
 
 ENTRYPOINT ["/worker/entrypoint.sh"]
