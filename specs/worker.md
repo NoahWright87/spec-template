@@ -10,8 +10,14 @@ Layer 2 of the spec-template system — completely optional. A Docker container 
 
 ## Inputs
 
-- Runtime secrets: `ANTHROPIC_API_KEY`, `GITHUB_TOKEN` (injected at container start — never baked into image)
-- Runtime parameters: `TARGET_REPO` (required), `TARGET_BRANCH` (default: `main`), `CLAUDE_CONFIG_PATH`
+**Authentication (choose one — never bake into image):**
+- **Option A — Claude Code subscription:** omit `ANTHROPIC_API_KEY`; mount host `~/.claude` into the container (`-v ~/.claude:/root/.claude:ro`) so the CLI uses OAuth credentials from `claude login`
+- **Option B — Anthropic API key:** set `ANTHROPIC_API_KEY`; uses the pay-per-token API at api.anthropic.com
+
+**Always required:**
+- `GITHUB_TOKEN` — GitHub personal access token or app token (repo read/write + issues + PRs)
+
+**Runtime parameters:** `TARGET_REPO` (required), `TARGET_BRANCH` (default: `main`), `CLAUDE_CONFIG_PATH`
 
 ## Outputs
 
@@ -30,7 +36,7 @@ Layer 2 of the spec-template system — completely optional. A Docker container 
 
 ### Execution flow (`entrypoint.sh`)
 
-1. Validate required env vars (`ANTHROPIC_API_KEY`, `GITHUB_TOKEN`, `TARGET_REPO`)
+1. Validate required env vars (`GITHUB_TOKEN`, `TARGET_REPO`); detect auth mode: API key (`ANTHROPIC_API_KEY` set) or subscription (`~/.claude` mounted) — exits with a helpful message if neither is present
 2. Authenticate `gh` CLI with `GITHUB_TOKEN`
 3. Clone target repo, or `fetch` + `reset --hard` for updates
 4. **Scaffold detection:** check for `specs/AGENTS.md` in the workspace

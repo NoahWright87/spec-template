@@ -5,6 +5,6 @@ Work to build and maintain the installable scaffold payload (Layer 1): the small
 
 ## Reminders
 
-- Move completed items to `scaffold.md` — this file is for future plans, not current state
-- Items flow: INTAKE → `spec.todo.md` → `scaffold.todo.md` (scaffold-specific) → `scaffold.md` (when done)
-- If a TODO item links to a GH issue (`[#N](...)`), include `closes #N` in your PR description — GitHub closes the issue on merge
+* Move completed items to `scaffold.md` — this file is for future plans, not current state
+* Items flow: INTAKE → `spec.todo.md` → `scaffold.todo.md` (scaffold-specific) → `scaffold.md` (when done)
+* If a TODO item links to a GH issue (`[#N](...)`), include `closes #N` in your PR description — GitHub closes the issue on merge
