@@ -5,6 +5,6 @@ Work to build the reusable containerized worker (Layer 2): the autonomous runner
 
 ## Reminders
 
-- Move completed items to `spec.md` — this file is for future plans, not current state
-- Items flow: INTAKE → `spec.todo.md` → `worker.todo.md` (worker-specific) → `spec.md` (when done)
+- Move completed items to `worker.md` — this file is for future plans, not current state
+- Items flow: INTAKE → `spec.todo.md` → `worker.todo.md` (worker-specific) → `worker.md` (when done)
 - If a TODO item links to a GH issue (`[#N](...)`), include `closes #N` in your PR description — GitHub closes the issue on merge
