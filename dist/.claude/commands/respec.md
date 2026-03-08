@@ -1,3 +1,7 @@
+<!-- AUTO-GENERATED — do not edit directly.
+     Source: .claude/commands/respec.md
+     Regenerate: run scripts/generate-dist.sh from the repo root. -->
+
 # /respec
 
 Apply or refresh the [spec-template](https://github.com/NoahWright87/spec-template) system in this repository.

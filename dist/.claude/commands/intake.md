@@ -1,3 +1,7 @@
+<!-- AUTO-GENERATED — do not edit directly.
+     Source: .claude/commands/intake.md
+     Regenerate: run scripts/generate-dist.sh from the repo root. -->
+
 # Intake
 
 Process ideas from `specs/INTAKE.md` — and from open GitHub Issues — and file them into the appropriate TODO spec files.
@@ -60,7 +64,7 @@ Read `specs/INTAKE.md` and scan for items with date annotations before doing any
 3. Filter out any issues that already carry one of these labels: `intake:filed`, `intake:rejected`, `intake:ignore`.
 4. For each remaining issue, append a bullet to the `## Submissions` section of `specs/INTAKE.md`:
    ```
-   [#N](url) Issue title
+   - [#N](url) Issue title
    ```
 5. If no unprocessed issues are found, note it and continue.
 

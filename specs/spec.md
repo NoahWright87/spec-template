@@ -1,43 +1,27 @@
-# <Name> Spec
+# Spec Template — Current State
 
 ## Purpose
-Briefly describe what this thing is and why it exists.
-Focus on intent, not implementation.
+
+A two-product system for spec-driven development: an installable scaffold that gives AI a persistent memory in any repo, and an optional autonomous worker container that runs the intake/TODO workflow on a schedule.
 
 ## Related
-Links to other **specs only** (no TODO links).
 
-## Contract
-Required in every spec. Describe the inputs and outputs.
+- [`scaffold.md`](scaffold.md) — Layer 1 current state (scaffold files, dist/ generation)
+- [`worker.md`](worker.md) — Layer 2 current state (worker container, modes, CI/CD)
+- [`scaffold.todo.md`](scaffold.todo.md) — future scaffold and dist/ work
+- [`worker.todo.md`](worker.todo.md) — future worker runtime work
+- [`spec.todo.md`](spec.todo.md) — meta-tooling improvements (commands, UX)
 
-### Inputs
-- Requests, parameters, events, config, environment, user actions, etc.
+## System Overview
 
-### Outputs
-- Responses, rendered UI, side effects, persisted data, emitted events, etc.
+The system has two independent layers. A repo can use Layer 1 without ever running Layer 2.
 
-### Guarantees / Constraints
-- Invariants, ordering, idempotency, auth expectations, performance expectations, etc.
+**Layer 1 — Installable scaffold:** a small set of files (spec templates, AI slash commands, a PR check workflow) that downstream repos copy in via `/respec` or from `dist/`. Gives AI a persistent spec memory in the target repo. See [`scaffold.md`](scaffold.md).
 
-## Behavior
-Describe how this behaves in practice.
+**Layer 2 — Autonomous worker:** a Docker container that clones a target repo, detects whether the scaffold is installed, and either bootstraps it (install mode) or runs the intake/TODO workflow (operate mode) on a cron schedule. See [`worker.md`](worker.md).
 
-- Happy path
-- Alternate paths
-- Empty / error states
-- Edge cases worth explicitly calling out
+## Guarantees / Constraints
 
-Avoid implementation details; focus on observable behavior.
-
-## User Experience (UX)
-How will the end users / consumers interact with this?
-
-For front end, this includes layout, content, animation, etc.
-For backend / libs, this includes comments, instructions, developer ergonomics, etc.
-
-## Acceptance
-Define what "done" means in testable terms.
-
-- Acceptance criteria (user- or system-observable)
-- Test notes (unit / integration / e2e as appropriate)
-- Any required logging, metrics, or signals
+- Scaffold files in `dist/` are auto-generated from source — edit sources, run `scripts/generate-dist.sh`, commit result
+- Worker secrets are never baked into the image — always injected at runtime
+- Worker state volume is a supporting cache; GitHub and the target repo are the primary system of record
