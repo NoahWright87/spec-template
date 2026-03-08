@@ -6,16 +6,26 @@ This is Layer 2 of the spec-template system — completely optional. A repo can 
 
 ---
 
-## What it does
+## How it works — two modes
 
-On each run:
+The worker automatically decides what to do based on whether the target repo already has the scaffold installed.
+
+### Install mode (first run against an unscaffolded repo)
+
+1. Clones the target repository.
+2. Checks for `specs/AGENTS.md` — the scaffold detection marker.
+3. Marker absent → **install mode**: copies the `dist/` scaffold payload into the repo, creates a `scaffold/bootstrap-*` branch, commits, and opens a bootstrap PR.
+4. Exits. The next run (after the PR is merged) switches to operate mode automatically.
+
+### Operate mode (subsequent runs)
 
 1. Clones or updates the target repository.
-2. Reads and executes the **intake** command — routes open GitHub issues to the correct spec files.
-3. Reads and executes the **knock-out-todos** command — implements the easiest open TODOs.
-4. Commits and opens PRs for completed work.
-5. Posts questions to GitHub issues for anything that needs human input.
-6. Exits. The next cron run picks up where it left off.
+2. Finds `specs/AGENTS.md` — scaffold confirmed.
+3. Reads and executes the **intake** command — routes open GitHub issues to the correct spec files.
+4. Reads and executes the **knock-out-todos** command — implements the easiest open TODOs.
+5. Commits and opens PRs for completed work.
+6. Posts questions to GitHub issues for anything that needs human input.
+7. Exits. The next cron run picks up where it left off.
 
 ---
 
@@ -36,8 +46,18 @@ Never bake these into the image.
 |---|---|---|---|
 | `TARGET_REPO` | Yes | — | Target repository in `owner/repo` format |
 | `TARGET_BRANCH` | No | `main` | Branch to clone and work against |
-| `EXECUTION_MODE` | No | `full` | Reserved for future use (e.g. `intake-only`) |
 | `CLAUDE_CONFIG_PATH` | No | `.claude` | Path to config dir in the target repo (relative to repo root) |
+
+## Adopting a repo via the worker
+
+The easiest way to bootstrap a new repo:
+
+1. Point the worker at the target repo with `TARGET_REPO`.
+2. The worker detects no scaffold and opens a bootstrap PR automatically.
+3. Review and merge the PR.
+4. The next cron run switches to operate mode and begins processing normally.
+
+**Detection:** the worker checks for `specs/AGENTS.md`. This file is unique to the scaffold and reliably absent from unscaffolded repos. If the marker is present, operate mode runs. If absent, install mode runs.
 
 ---
 

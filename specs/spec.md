@@ -74,8 +74,13 @@ The worker container (`worker/Dockerfile`) is built on `node:20-slim` and includ
 1. Validate required env vars (`ANTHROPIC_API_KEY`, `GITHUB_TOKEN`, `TARGET_REPO`)
 2. Authenticate `gh` CLI with `GITHUB_TOKEN`
 3. Clone target repo, or `fetch` + `reset --hard` for updates
-4. Run Claude CLI non-interactively (`--no-interactive -p`) with worker instructions
-5. Tee output to `/worker/state/last-run.log`; exit
+4. **Scaffold detection:** check for `specs/AGENTS.md` in the workspace
+5. **Install mode** (marker absent): copy `/worker/dist/` into workspace → create `scaffold/bootstrap-*` branch → commit → push → open bootstrap PR → exit
+6. **Operate mode** (marker present): run Claude CLI non-interactively with worker instructions → tee to `/worker/state/last-run.log` → exit
+
+**Scaffold detection:** `specs/AGENTS.md` is the canonical marker. It is distinctive to the scaffold and reliably absent from unscaffolded repos. The check is explicit and runs before any workflow logic.
+
+**Install mode PR:** titled "Install spec-template scaffold"; includes a list of installed files, next steps for the maintainer, and a link to the source repo. Branch name: `scaffold/bootstrap-YYYYMMDD-HHMMSS`.
 
 **Worker instructions:** defined in `worker/worker-instructions.md` (baked into image). Target repos can override with `.claude/worker-instructions.md`.
 
@@ -98,6 +103,8 @@ The worker container (`worker/Dockerfile`) is built on `node:20-slim` and includ
 ## Acceptance
 
 - `dist/` contains all scaffold files with auto-generated headers; re-running `generate-dist.sh` produces identical output for unchanged sources
-- Worker container starts, clones a target repo, runs Claude non-interactively, and exits with code 0 on success
+- Worker container starts, clones a target repo, detects scaffold presence, and runs the appropriate mode (install or operate)
+- Install mode: opens a bootstrap PR with the `dist/` payload; subsequent runs switch to operate mode automatically after the PR is merged
+- Operate mode: runs intake + knock-out-todos via Claude CLI; exits with code 0 on success
 - `build-worker.yml` triggers on pushes to `worker/` and `scripts/`, publishes to GHCR
 - Target repos can override worker instructions by placing `.claude/worker-instructions.md` in the repo

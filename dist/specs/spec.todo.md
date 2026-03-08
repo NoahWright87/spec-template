@@ -13,9 +13,7 @@ Top priorities to tackle next and why they matter.
 Use **H3 headings** for each priority, in priority order.
 
 ### <Priority Name>
-- Description of the work
-- Expected behavior / outcome
-- Any constraints or design notes
+- Description of the work, expected outcome, and any constraints
 - Should be implementable and promotable into a `spec.md`
 
 ## Later

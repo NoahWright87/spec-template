@@ -30,6 +30,22 @@ LLMs and humans alike benefit from reinforcement. A rule seen once can be skimme
 
 *If it's important, it bears repeating.*
 
+## Proximity shapes behavior
+
+Context is subtly powerful. The format, structure, and visual affordances of a document actively shape what an agent does next — often more powerfully than instructions written elsewhere on the page.
+
+The clearest example: this system's TODO files originally used `- [ ]` checkboxes. The instructions said, in multiple places, that completed items should be *removed from the todo file and promoted to `spec.md`*. The instructions were correct. They were repeated. They were even in `## Reminders` sections inside the todo files themselves.
+
+None of that mattered. A checkbox is a checkbox. The closest identifiable pattern — "this is a task, tasks get checked off" — dominated over the textual instructions. `- [ ]` became `- [x]` and the item stayed in the file. The format communicated louder than the words.
+
+The fix was to remove the checkbox entirely. Plain bullets have no "checked" state. There is no affordance for half-done. An item either exists (to do) or it doesn't (done, promoted). The instruction and the format now agree, and the behavior followed.
+
+**In practice:**
+- When a format or structure suggests an action, it will be taken — even if instructions say otherwise
+- Affordances are instructions. A checkbox says "check me." A delete-only format says "remove me."
+- Prefer formats that make the *right* action the *obvious* action, rather than relying on instruction text to override visual instinct
+- When instructions and format conflict, the format usually wins — fix the format
+
 ## Specs as source of truth
 
 Code implements specs. Specs describe what the system is and how it behaves. When they diverge, the spec is the authority — either the code needs fixing, or the spec needs updating.

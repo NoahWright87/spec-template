@@ -89,8 +89,9 @@ The repo is already running this template. Fetch upstream changes and apply them
    - **Unchanged:** Skip silently.
    - **Changed:** Show the user a summary of what changed and ask whether to apply it.
 4. Apply approved updates. Leave everything else in place.
-5. Update `specs/.meta.json` with the new commit hash and today's date.
-6. Report what was updated and what was skipped.
+5. **Check TODO format migration.** Compare the fetched `specs/spec.todo.md` template against all local `*.todo.md` files. If the template uses a different bullet format than what the repo's TODO files currently use (e.g. the template now uses plain `- ` bullets but local files still use `- [ ]` checkboxes), tell the user what changed and offer to migrate. If the user approves, update the local TODO files to the current format, preserving all content. Apply only what the user approves.
+6. Update `specs/.meta.json` with the new commit hash and today's date.
+7. Report what was updated, what was skipped, and whether a TODO format migration was applied.
 
 ---
 

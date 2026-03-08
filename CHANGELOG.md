@@ -7,12 +7,17 @@ This file lists the current and previous versions, along with the features that 
 ## WIP
 
 - Add `worker/` — autonomous containerized runner (Dockerfile, entrypoint.sh, worker-instructions.md, README.md); cron job model with Docker volume state persistence, GHCR publishing
-- Add `scaffold/specs/` — template source files (separate from this repo's live spec content) for the installable scaffold payload
+- Add scaffold detection + install mode + operate mode to worker: checks for `specs/AGENTS.md`; missing → copies `dist/` payload, opens bootstrap PR; present → runs intake + knock-out-todos via Claude CLI
+- Add `scaffold/specs/` — template source files for the installable scaffold payload
 - Add `scripts/generate-dist.sh` — generates `dist/` from scaffold sources + command files with auto-generated do-not-edit headers; commit dist/ for downstream consumption
 - Add `dist/` — generated installable scaffold payload committed to repo for direct consumption
 - Add `.github/workflows/build-worker.yml` — builds and publishes worker image to GHCR on pushes to `worker/` or `scripts/` on main
+- Add `CONTRIBUTING.md` — scaffold source structure, dist/ regeneration workflow, manual installation without /respec
 - Update `README.md` — add "Running on autopilot" section linking to worker runtime
 - Fill in `specs/spec.md` with current two-layer system state
+- Switch TODO item format from `- [ ]` checkboxes to plain `- ` bullets; update `/knock-out-todos` accordingly (remove Step 0 orphan scan, new grep pattern, remove → promote flow instead of check-then-move)
+- Add `PHILOSOPHY.md` proximity section — explains how format affords behavior and the checkbox incident as a concrete example
+- Add `/respec` Update step 5 — detects TODO format changes and offers to migrate existing TODO files; applies only with user approval
 
 ## v0.6.2
 

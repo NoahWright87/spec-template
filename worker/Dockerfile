@@ -24,6 +24,8 @@ RUN npm install -g @anthropic-ai/claude-code
 WORKDIR /worker
 COPY worker/entrypoint.sh ./entrypoint.sh
 COPY worker/worker-instructions.md ./worker-instructions.md
+# dist/ is the scaffold payload used by install mode to bootstrap unscaffolded repos
+COPY dist/ ./dist/
 RUN chmod +x ./entrypoint.sh
 
 # ── Directories ────────────────────────────────────────────────────────────────
