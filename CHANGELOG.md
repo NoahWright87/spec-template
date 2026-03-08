@@ -6,6 +6,10 @@ This file lists the current and previous versions, along with the features that 
 
 ## WIP
 
+- TBD
+
+## v0.7.0
+
 - Add `worker/` — autonomous containerized runner (Dockerfile, entrypoint.sh, worker-instructions.md, README.md); cron job model with Docker volume state persistence, GHCR publishing
 - Add scaffold detection + install mode + operate mode to worker: checks for `specs/AGENTS.md`; missing → copies `dist/` payload, opens bootstrap PR; present → runs intake + knock-out-todos via Claude CLI
 - Add `scaffold/specs/` — template source files for the installable scaffold payload
