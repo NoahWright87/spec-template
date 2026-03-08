@@ -75,12 +75,12 @@ The worker container (`worker/Dockerfile`) is built on `node:20-slim` and includ
 2. Authenticate `gh` CLI with `GITHUB_TOKEN`
 3. Clone target repo, or `fetch` + `reset --hard` for updates
 4. **Scaffold detection:** check for `specs/AGENTS.md` in the workspace
-5. **Install mode** (marker absent): copy `/worker/dist/` into workspace → create `scaffold/bootstrap-*` branch → commit → push → open bootstrap PR → exit
+5. **Install mode** (marker absent): copy `/worker/dist/` into workspace → create `scaffold/bootstrap` branch → commit → push → open bootstrap PR → exit
 6. **Operate mode** (marker present): run Claude CLI non-interactively with worker instructions → tee to `/worker/state/last-run.log` → exit
 
 **Scaffold detection:** `specs/AGENTS.md` is the canonical marker. It is distinctive to the scaffold and reliably absent from unscaffolded repos. The check is explicit and runs before any workflow logic.
 
-**Install mode PR:** titled "Install spec-template scaffold"; includes a list of installed files, next steps for the maintainer, and a link to the source repo. Branch name: `scaffold/bootstrap-YYYYMMDD-HHMMSS`.
+**Install mode PR:** titled "Install spec-template scaffold"; includes a list of installed files, next steps for the maintainer, and a link to the source repo. Branch name: `scaffold/bootstrap` (deterministic — stale branches from closed PRs are cleaned up before each attempt).
 
 **Worker instructions:** defined in `worker/worker-instructions.md` (baked into image). Target repos can override with `.claude/worker-instructions.md`.
 

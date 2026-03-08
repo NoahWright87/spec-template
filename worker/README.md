@@ -14,7 +14,7 @@ The worker automatically decides what to do based on whether the target repo alr
 
 1. Clones the target repository.
 2. Checks for `specs/AGENTS.md` — the scaffold detection marker.
-3. Marker absent → **install mode**: copies the `dist/` scaffold payload into the repo, creates a `scaffold/bootstrap-*` branch, commits, and opens a bootstrap PR.
+3. Marker absent → **install mode**: copies the `dist/` scaffold payload into the repo, creates a `scaffold/bootstrap` branch, commits, and opens a bootstrap PR.
 4. Exits. The next run (after the PR is merged) switches to operate mode automatically.
 
 ### Operate mode (subsequent runs)

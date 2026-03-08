@@ -79,6 +79,16 @@ if [ "$WORKER_MODE" = "install" ]; then
         exit 0
     fi
 
+    # Clean up any stale local/remote branch left over from a previous closed attempt
+    if git -C "$WORKSPACE" show-ref --verify --quiet "refs/heads/$BRANCH"; then
+        echo "[worker] Removing stale local branch $BRANCH..."
+        git -C "$WORKSPACE" branch -D "$BRANCH"
+    fi
+    if git -C "$WORKSPACE" ls-remote --exit-code --heads origin "$BRANCH" > /dev/null 2>&1; then
+        echo "[worker] Removing stale remote branch $BRANCH..."
+        git -C "$WORKSPACE" push origin --delete "$BRANCH"
+    fi
+
     echo "[worker] Creating branch: $BRANCH"
     git -C "$WORKSPACE" checkout -b "$BRANCH"
 
