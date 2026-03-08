@@ -6,7 +6,7 @@ Number to tackle: $ARGUMENTS (default 5 if blank)
 
 ## How to find TODOs
 
-Use the Grep tool to search for `^- ` across all `specs/**/*.todo.md` files. Skip any bullets from `## Reminders` sections — those are standing instructions, not actionable work items. Read the results and assess relative difficulty. Skip items that are TBD placeholders or that clearly require decisions from the user (e.g. "open questions", "TBD", or items requiring new full components with no spec yet).
+Use the Grep tool to search for `^- ` across all `specs/**/*.todo.md` files. Read the results and assess relative difficulty. Skip items that are TBD placeholders or that clearly require decisions from the user (e.g. "open questions", "TBD", or items requiring new full components with no spec yet).
 
 ## How to choose which items to tackle
 
@@ -87,7 +87,7 @@ When a chosen item lives in `specs/deps/{repo}.todo.md`, follow this flow instea
 
 ## Reminders
 
-- `spec.md` = current state | `spec.todo.md` = future plans | INTAKE = entry point
-- Completed work belongs in `spec.md` — remove items from todo files when done, never leave completed items behind
-- Items flow: INTAKE → `spec.todo.md` → `{feature}.todo.md` (if big) → `spec.md` (when done)
-- GH-linked items (`[#N]`): include `closes #N` in your PR description — GitHub closes the issue on merge
+* `spec.md` = current state | `spec.todo.md` = future plans | INTAKE = entry point
+* Completed work belongs in `spec.md` — remove items from todo files when done, never leave completed items behind
+* Items flow: INTAKE → `spec.todo.md` → `{feature}.todo.md` (if big) → `spec.md` (when done)
+* GH-linked items (`[#N]`): include `closes #N` in your PR description — GitHub closes the issue on merge
