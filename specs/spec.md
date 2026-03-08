@@ -23,5 +23,5 @@ The system has two independent layers. A repo can use Layer 1 without ever runni
 ## Guarantees / Constraints
 
 - Scaffold files in `dist/` are auto-generated from source — edit sources, run `scripts/generate-dist.sh`, commit result
-- Worker secrets are never baked into the image — always injected at runtime
+- Worker supports two auth modes: Claude Code subscription (mount `~/.claude`) or Anthropic API key (`ANTHROPIC_API_KEY`); never bake credentials into the image
 - Worker state volume is a supporting cache; GitHub and the target repo are the primary system of record

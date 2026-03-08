@@ -10,8 +10,14 @@ Layer 2 of the spec-template system — completely optional. A Docker container 
 
 ## Inputs
 
-- Runtime secrets: `ANTHROPIC_API_KEY`, `GITHUB_TOKEN` (injected at container start — never baked into image)
-- Runtime parameters: `TARGET_REPO` (required), `TARGET_BRANCH` (default: `main`), `CLAUDE_CONFIG_PATH`
+**Authentication (choose one — never bake into image):**
+- **Option A — Claude Code subscription:** omit `ANTHROPIC_API_KEY`; mount host `~/.claude` into the container (`-v ~/.claude:/root/.claude:ro`) so the CLI uses OAuth credentials from `claude login`
+- **Option B — Anthropic API key:** set `ANTHROPIC_API_KEY`; uses the pay-per-token API at api.anthropic.com
+
+**Always required:**
+- `GITHUB_TOKEN` — GitHub personal access token or app token (repo read/write + issues + PRs)
+
+**Runtime parameters:** `TARGET_REPO` (required), `TARGET_BRANCH` (default: `main`), `CLAUDE_CONFIG_PATH`
 
 ## Outputs
 

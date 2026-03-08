@@ -29,14 +29,54 @@ The worker automatically decides what to do based on whether the target repo alr
 
 ---
 
+## Authentication
+
+The worker supports two auth modes for Claude. Use whichever matches your setup.
+
+### Option A — Claude Code subscription (personal use, recommended locally)
+
+If you have a Claude.ai subscription (e.g. the $20/month plan), you can use it instead of paying for API tokens separately.
+
+**One-time setup on your host machine:**
+
+```bash
+claude login   # opens browser, authenticates against claude.ai
+```
+
+This stores credentials in `~/.claude/` on the host. Mount that directory into the container — the CLI inside will find them automatically. Do **not** set `ANTHROPIC_API_KEY`.
+
+```bash
+docker run --rm \
+  -v ~/.claude:/root/.claude:ro \
+  -e GITHUB_TOKEN="your-github-token" \
+  -e TARGET_REPO="owner/your-repo" \
+  -v spec-worker-state:/worker/state \
+  ghcr.io/noahwright87/spec-template-worker:latest
+```
+
+### Option B — Anthropic API key (CI/CD, Kubernetes, work environments)
+
+Create an API key at [console.anthropic.com](https://console.anthropic.com). This is a separate, pay-per-token product from the claude.ai subscription.
+
+```bash
+docker run --rm \
+  -e ANTHROPIC_API_KEY="sk-ant-..." \
+  -e GITHUB_TOKEN="your-github-token" \
+  -e TARGET_REPO="owner/your-repo" \
+  -v spec-worker-state:/worker/state \
+  ghcr.io/noahwright87/spec-template-worker:latest
+```
+
+---
+
 ## Required secrets
 
 Never bake these into the image.
 
-| Variable | What it is |
-|---|---|
-| `ANTHROPIC_API_KEY` | Claude API key — used by Claude Code CLI |
-| `GITHUB_TOKEN` | GitHub personal access token or app token — needs repo read/write + issues + PRs |
+| Variable | Required | What it is |
+|---|---|---|
+| `GITHUB_TOKEN` | Always | GitHub personal access token or app token — needs repo read/write + issues + PRs |
+| `ANTHROPIC_API_KEY` | Option B only | Anthropic API key — not needed if using Option A (subscription mount) |
 
 ---
 
@@ -77,30 +117,42 @@ docker volume create spec-worker-state
 
 ### 3. Run a single iteration
 
+**With Claude Code subscription (Option A):**
+
 ```bash
 docker run --rm \
-  -e ANTHROPIC_API_KEY="your-anthropic-key" \
+  -v ~/.claude:/root/.claude:ro \
   -e GITHUB_TOKEN="your-github-token" \
   -e TARGET_REPO="owner/your-repo" \
-  -e TARGET_BRANCH="main" \
+  -v spec-worker-state:/worker/state \
+  ghcr.io/noahwright87/spec-template-worker:latest
+```
+
+**With API key (Option B):**
+
+```bash
+docker run --rm \
+  -e ANTHROPIC_API_KEY="sk-ant-..." \
+  -e GITHUB_TOKEN="your-github-token" \
+  -e TARGET_REPO="owner/your-repo" \
   -v spec-worker-state:/worker/state \
   ghcr.io/noahwright87/spec-template-worker:latest
 ```
 
 ### 4. Schedule recurring runs (Docker Desktop)
 
-Use a cron expression with Docker's restart policies, or a local cron job that calls `docker run`:
+Use a local cron job that calls `docker run` (Option A shown — adjust for Option B as needed):
 
 ```cron
 # Run the worker every day at 3 AM
-0 3 * * * docker run --rm -e ANTHROPIC_API_KEY="..." -e GITHUB_TOKEN="..." -e TARGET_REPO="owner/repo" -v spec-worker-state:/worker/state ghcr.io/noahwright87/spec-template-worker:latest
+0 3 * * * docker run --rm -v ~/.claude:/root/.claude:ro -e GITHUB_TOKEN="..." -e TARGET_REPO="owner/repo" -v spec-worker-state:/worker/state ghcr.io/noahwright87/spec-template-worker:latest
 ```
 
 ---
 
 ## Deploying in Kubernetes
 
-The worker runs as a [`CronJob`](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) in Kubernetes.
+The worker runs as a [`CronJob`](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) in Kubernetes. In a CI/CD or shared environment, Option B (API key) is the natural fit — store it as a Secret.
 
 ```yaml
 apiVersion: batch/v1
@@ -154,4 +206,4 @@ The worker checks for `.claude/worker-instructions.md` in the target repo before
 
 ## How the image is built
 
-The image is built automatically by GitHub Actions when files in `worker/` or `scripts/` change on `main`. See `.github/workflows/build-worker.yml`. The image is published to GitHub Container Registry (GHCR) and tagged with both `latest` and the commit SHA.
+The image is built automatically by GitHub Actions when files in `worker/`, `scripts/`, or `dist/` change on `main`. See `.github/workflows/build-worker.yml`. The image is published to GitHub Container Registry (GHCR) and tagged with both `latest` and the commit SHA.

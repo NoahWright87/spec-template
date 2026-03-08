@@ -15,13 +15,30 @@
 set -euo pipefail
 
 # ── Required environment validation ───────────────────────────────────────────
-: "${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY is required}"
 : "${GITHUB_TOKEN:?GITHUB_TOKEN is required}"
 : "${TARGET_REPO:?TARGET_REPO is required}"
 
 # ── Optional parameters with defaults ─────────────────────────────────────────
 TARGET_BRANCH="${TARGET_BRANCH:-main}"
 CLAUDE_CONFIG_PATH="${CLAUDE_CONFIG_PATH:-.claude}"
+
+# ── Auth mode detection ────────────────────────────────────────────────────────
+# Two supported modes:
+#   API key:      Set ANTHROPIC_API_KEY. Uses the Anthropic API directly (pay-per-token).
+#   Subscription: Omit ANTHROPIC_API_KEY. Mount ~/.claude from the host so the Claude
+#                 Code CLI can find the OAuth credentials from `claude login`.
+#                 e.g. docker run -v ~/.claude:/root/.claude ...
+if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+    echo "[worker] Auth mode: API key"
+else
+    echo "[worker] Auth mode: Claude Code subscription (expecting mounted ~/.claude credentials)"
+    if [ ! -f "/root/.claude/credentials.json" ] && [ ! -d "/root/.claude" ]; then
+        echo "[worker] WARNING: No ANTHROPIC_API_KEY set and no ~/.claude directory found."
+        echo "[worker]          Mount your host credentials: -v ~/.claude:/root/.claude"
+        echo "[worker]          Or set ANTHROPIC_API_KEY for API key auth."
+        exit 1
+    fi
+fi
 
 WORKSPACE="/worker/workspace"
 DIST_DIR="/worker/dist"
