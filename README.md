@@ -80,4 +80,14 @@ Delete `specs/` and remove the command files from `.claude/commands/`. That's ev
 
 ---
 
+## Running on autopilot (optional)
+
+The scaffold works on demand — you ask your AI, it helps. That's the simple path.
+
+If you want fully **autonomous operation** — Claude continuously working on its own — this repo also provides a worker container. It runs as a cron job: wakes up, clones your repo, runs intake and TODO processing, and exits. No human in the loop required.
+
+See [`worker/README.md`](worker/README.md) for setup and deployment instructions (Docker Desktop and Kubernetes).
+
+---
+
 Read [PHILOSOPHY.md](PHILOSOPHY.md) for the thinking behind the design choices.
