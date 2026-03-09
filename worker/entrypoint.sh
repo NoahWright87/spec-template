@@ -54,8 +54,8 @@ echo "[worker] Starting run — $TARGET_REPO @ $TARGET_BRANCH"
 echo "[worker] ────────────────────────────────────────────────────────────────"
 
 # ── Authenticate GitHub CLI ────────────────────────────────────────────────────
-echo "[worker] Authenticating gh CLI..."
-echo "$GITHUB_TOKEN" | gh auth login --with-token --hostname github.com
+# gh CLI automatically uses GITHUB_TOKEN from the environment — no explicit login needed.
+echo "[worker] gh CLI ready (using GITHUB_TOKEN from environment)."
 
 # ── Clone or update the target repository ─────────────────────────────────────
 if [ -d "$WORKSPACE/.git" ]; then
