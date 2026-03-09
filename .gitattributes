@@ -1,0 +1,4 @@
+# Enforce LF for files that must not have CRLF
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.sh   text eol=lf

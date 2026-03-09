@@ -112,11 +112,14 @@ jobs:
       - name: Post or update PR comment
         if: steps.check.outputs.skip != 'true'
         uses: actions/github-script@v7
+        env:
+          HAS_UNCOVERED: ${{ steps.check.outputs.has_uncovered }}
+          UNCOVERED_LIST: ${{ steps.check.outputs.uncovered_list }}
         with:
           script: |
             const marker = '<!-- spec-coverage-check -->';
-            const hasUncovered = '${{ steps.check.outputs.has_uncovered }}' === 'true';
-            const raw = ${{ toJSON(steps.check.outputs.uncovered_list) }};
+            const hasUncovered = process.env.HAS_UNCOVERED === 'true';
+            const raw = process.env.UNCOVERED_LIST || '';
             const uncovered = raw.trim() ? raw.trim().split('\n') : [];
 
             let body;
