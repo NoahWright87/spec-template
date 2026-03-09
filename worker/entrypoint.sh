@@ -168,7 +168,7 @@ if [ -f "$CLAUDE_CONFIG_PATH/worker-instructions.md" ]; then
     echo "[worker] Using repo-local worker instructions."
 fi
 
-claude --no-interactive \
+claude \
     -p "$(cat "$INSTRUCTIONS_FILE")" \
     2>&1 | tee "$LOG_FILE"
 
