@@ -21,6 +21,8 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    # Don't run on fork PRs — they can't push to GHCR (packages: write is unavailable)
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.fork == false
     permissions:
       contents: read
       packages: write

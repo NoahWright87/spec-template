@@ -53,9 +53,12 @@ echo "[worker] ─────────────────────�
 echo "[worker] Starting run — $TARGET_REPO @ $TARGET_BRANCH"
 echo "[worker] ────────────────────────────────────────────────────────────────"
 
-# ── Authenticate GitHub CLI ────────────────────────────────────────────────────
-# gh CLI automatically uses GITHUB_TOKEN from the environment — no explicit login needed.
-echo "[worker] gh CLI ready (using GITHUB_TOKEN from environment)."
+# ── Authenticate GitHub CLI and git ───────────────────────────────────────────
+# gh CLI automatically uses GITHUB_TOKEN from the environment for API calls.
+# Configure git's credential helper so HTTPS git operations (push/pull) also use it.
+git config --global credential.helper \
+    '!f() { echo "username=x-access-token"; echo "password=$GITHUB_TOKEN"; }; f'
+echo "[worker] GitHub auth configured (GITHUB_TOKEN → gh CLI + git credential helper)."
 
 # ── Clone or update the target repository ─────────────────────────────────────
 if [ -d "$WORKSPACE/.git" ]; then
