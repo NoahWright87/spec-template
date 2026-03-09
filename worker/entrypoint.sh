@@ -25,17 +25,27 @@ CLAUDE_CONFIG_PATH="${CLAUDE_CONFIG_PATH:-.claude}"
 # ── Auth mode detection ────────────────────────────────────────────────────────
 # Two supported modes:
 #   API key:      Set ANTHROPIC_API_KEY. Uses the Anthropic API directly (pay-per-token).
+#                 Optionally set ANTHROPIC_BASE_URL to target a custom endpoint (enterprise proxy).
 #   Subscription: Omit ANTHROPIC_API_KEY. Mount ~/.claude from the host so the Claude
 #                 Code CLI can find the OAuth credentials from `claude login`.
-#                 e.g. docker run -v ~/.claude:/root/.claude ...
+#                 e.g. docker run -v ~/.claude:/root/.claude:ro ...
+#                 IMPORTANT: credentials must be stored as files in ~/.claude/.credentials.json.
+#                 If `claude login` stored tokens in your OS keychain (macOS/Windows default),
+#                 the file won't be present — use API key mode instead.
 if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
     echo "[worker] Auth mode: API key"
+    if [ -n "${ANTHROPIC_BASE_URL:-}" ]; then
+        echo "[worker] Using custom API endpoint: $ANTHROPIC_BASE_URL"
+    fi
 else
     echo "[worker] Auth mode: Claude Code subscription (expecting mounted ~/.claude credentials)"
-    if [ ! -d "/root/.claude" ]; then
-        echo "[worker] ERROR: No ANTHROPIC_API_KEY set and no ~/.claude directory mounted."
-        echo "[worker]        Mount your host credentials: -v ~/.claude:/root/.claude:ro"
-        echo "[worker]        Or set ANTHROPIC_API_KEY for API key auth."
+    if [ ! -f "/root/.claude/.credentials.json" ]; then
+        echo "[worker] ERROR: Subscription credentials not found at ~/.claude/.credentials.json"
+        echo "[worker]        On macOS/Windows, 'claude login' stores tokens in the OS keychain,"
+        echo "[worker]        not as a file — use API key mode instead:"
+        echo "[worker]          docker run -e ANTHROPIC_API_KEY=<key> ..."
+        echo "[worker]        Or if credentials are file-based, mount the directory:"
+        echo "[worker]          docker run -v ~/.claude:/root/.claude:ro ..."
         exit 1
     fi
 fi

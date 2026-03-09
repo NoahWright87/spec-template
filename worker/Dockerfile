@@ -38,11 +38,14 @@ RUN mkdir -p /worker/workspace /worker/state
 VOLUME /worker/state
 
 # ── Runtime secrets and parameters (supplied at container start, never baked in)
-# Auth (choose one) — ANTHROPIC_API_KEY (API key mode)
-#                     OR mount ~/.claude from host: -v ~/.claude:/root/.claude (subscription mode)
+# Auth (choose one) — ANTHROPIC_API_KEY (API key mode — recommended for containers)
+#                     OR mount ~/.claude from host: -v ~/.claude:/root/.claude:ro (subscription mode)
+#                        Subscription mode requires file-based credentials (~/.claude/.credentials.json).
+#                        If `claude login` used your OS keychain, use API key mode instead.
 # Required secrets  — GITHUB_TOKEN
 # Required params   — TARGET_REPO (e.g. "owner/repo")
 # Optional params   — TARGET_BRANCH (default: main)
 #                     CLAUDE_CONFIG_PATH (default: .claude — relative to repo root)
+#                     ANTHROPIC_BASE_URL (custom API endpoint for enterprise/proxy deployments)
 
 ENTRYPOINT ["/worker/entrypoint.sh"]
