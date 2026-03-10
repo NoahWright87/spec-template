@@ -5,6 +5,8 @@ This repo provides two products: (1) an installable spec / intake / TODO scaffol
 
 ## Sooner
 
+- [#12](https://github.com/NoahWright87/spec-template/issues/12) Fix step ordering in `intake.md`: rename "Step 0" to be sequentially ordered with the rest of the steps so the file reads top-to-bottom without a confusing out-of-order "Step 0"
+
 ## Later
 
 ### /refine command
@@ -23,6 +25,7 @@ This repo provides two products: (1) an installable spec / intake / TODO scaffol
 
 - [#5](https://github.com/NoahWright87/spec-template/issues/5) Auto-create GH issues for INTAKE items that aren't linked to one yet (optional, opt-in via config — not everyone will want this)
 - [#6](https://github.com/NoahWright87/spec-template/issues/6) GitHub Action that publishes both `/docs` and `/specs` to a single GH Pages site
+- [#13](https://github.com/NoahWright87/spec-template/issues/13) Auto-generate a human-readable roadmap from TODO spec files and place it in `/docs` for easy GH Pages publishing; roadmap view should link back to individual spec files
 
 ## Ideas (Uncommitted)
 
