@@ -14,6 +14,7 @@ This file lists the current and previous versions, along with the features that 
 - Support two worker auth modes: Claude Code subscription (mount `~/.claude` from host) or Anthropic API key (`ANTHROPIC_API_KEY`); `ANTHROPIC_API_KEY` is no longer required
 - Add `specs/scaffold.md` and `specs/worker.md` — feature-level current-state specs (split from monolithic `specs/spec.md`)
 - Switch `## Reminders` bullets in `knock-out-todos.md` to `*` so grep for `^- ` skips them naturally
+- Restructure `README.md`: move Quick Start (onboarding command) to top before pitch text; add `## What is this?` wrapper for background sections; document human-vs-AI docs separation in `spec.md`
 
 ## v0.7.0
 

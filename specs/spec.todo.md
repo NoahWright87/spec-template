@@ -13,14 +13,11 @@ This repo provides two products: (1) an installable spec / intake / TODO scaffol
   - Ask user (or GH comments) when intent or product decisions are unclear — do not assume
 
 ### Reduce cognitive load for humans
-- [#4](https://github.com/NoahWright87/spec-template/issues/4) Separate human-facing docs from AI-facing docs; make README the clear entrypoint for humans with the onboarding command surfaced first
 - [#4](https://github.com/NoahWright87/spec-template/issues/4) Audit commands and consider combining or routing via a meta `/help` command so humans have less to remember
 
 ## Backlog
 
 - [#5](https://github.com/NoahWright87/spec-template/issues/5) Auto-create GH issues for INTAKE items that aren't linked to one yet (optional, opt-in via config — not everyone will want this)
-- [#13](https://github.com/NoahWright87/spec-template/issues/13) Auto-generate a roadmap view from TODO spec files and place it in `/docs` for easy GH Pages publishing; should link back to individual spec files
-- [#14](https://github.com/NoahWright87/spec-template/issues/14) Reduce token usage, especially for no-op runs: detect programmatically when no work is needed (e.g. no open PRs + no new comments) and skip Claude invocation entirely; pass pre-computed context to reduce terminal command overhead
 
 ## Ideas (Uncommitted)
 

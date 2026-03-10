@@ -31,6 +31,11 @@ The system has two independent layers. A repo can use Layer 1 without ever runni
 - `scripts/generate-roadmap.sh` — generates `docs/ROADMAP.md` from all `specs/**/*.todo.md` files; groups open items by area with links back to individual spec files; suitable for GH Pages publishing
 - `.github/workflows/pages.yml` — publishes `docs/` and `specs/` to GitHub Pages on push to main; regenerates roadmap before upload
 
+## Human-Facing Docs
+
+- `README.md` is the human entrypoint; Quick Start (onboarding command) appears first before any background explanation
+- AI-facing instructions live in `.claude/commands/` and `specs/AGENTS.md` — not in the README
+
 ## Guarantees / Constraints
 
 - Scaffold files in `dist/` are auto-generated from source — edit sources, run `scripts/generate-dist.sh`, commit result

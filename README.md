@@ -2,32 +2,6 @@
 
 Your AI writes code. This gives it a memory.
 
-Specs are plain markdown files describing what your system does and what's planned. Your AI reads them before touching code. When work is done, it updates them. Everything stays in sync — without anyone manually maintaining anything.
-
-No new tools. No process changes. Just files that live in your repo.
-
----
-
-## Tried keeping specs up to date before?
-
-It never sticks. Someone writes a spec, the code drifts, the spec rots.
-
-This system sidesteps the problem: **your AI does the upkeep**. It updates specs after implementing TODOs. It flags when code changes don't have a matching spec update. It generates specs from existing code if you're starting late.
-
-The specs stay current because the same thing writing the code is also writing the docs.
-
-GitHub Issues plug right in too. File an issue the way you already do. Run `/intake` and it routes the work to the right spec file, labels the issue, and asks you if anything's unclear. When the work is done, it links back to close it.
-
----
-
-## One person can add this today
-
-No team meeting required. No process overhaul.
-
-Teammates who don't use it won't notice it's there. Teammates who do get free context when they hand work to their AI. The specs accumulate quietly, and your whole team benefits over time.
-
-If you tried SpecKit and it didn't stick, this is different. SpecKit asked everyone to adopt a new process. This slides in under the workflow you already have — one engineer, one afternoon.
-
 ---
 
 ## Quick start
@@ -43,6 +17,32 @@ The assistant fetches the `/respec` command, checks what already exists, and wal
 **Claude users:** After setup, run `/respec` any time to pull in updates.
 
 **Other IDEs:** The same prompt works for updates too. The command files are plain markdown — paste them in or adapt them to your IDE's native format.
+
+---
+
+## What is this?
+
+Specs are plain markdown files describing what your system does and what's planned. Your AI reads them before touching code. When work is done, it updates them. Everything stays in sync — without anyone manually maintaining anything.
+
+No new tools. No process changes. Just files that live in your repo.
+
+### Tried keeping specs up to date before?
+
+It never sticks. Someone writes a spec, the code drifts, the spec rots.
+
+This system sidesteps the problem: **your AI does the upkeep**. It updates specs after implementing TODOs. It flags when code changes don't have a matching spec update. It generates specs from existing code if you're starting late.
+
+The specs stay current because the same thing writing the code is also writing the docs.
+
+GitHub Issues plug right in too. File an issue the way you already do. Run `/intake` and it routes the work to the right spec file, labels the issue, and asks you if anything's unclear. When the work is done, it links back to close it.
+
+### One person can add this today
+
+No team meeting required. No process overhaul.
+
+Teammates who don't use it won't notice it's there. Teammates who do get free context when they hand work to their AI. The specs accumulate quietly, and your whole team benefits over time.
+
+If you tried SpecKit and it didn't stick, this is different. SpecKit asked everyone to adopt a new process. This slides in under the workflow you already have — one engineer, one afternoon.
 
 ---
 
