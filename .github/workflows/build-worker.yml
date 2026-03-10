@@ -7,6 +7,12 @@ on:
       - 'worker/**'
       - 'scripts/**'
       - 'dist/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'worker/**'
+      - 'scripts/**'
+      - 'dist/**'
 
 env:
   REGISTRY: ghcr.io
@@ -15,6 +21,8 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    # Don't run on fork PRs — they can't push to GHCR (packages: write is unavailable)
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.fork == false
     permissions:
       contents: read
       packages: write
@@ -37,6 +45,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=sha,prefix=
+            type=ref,event=pr
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push

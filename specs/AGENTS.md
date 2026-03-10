@@ -60,6 +60,16 @@ The `specs/deps/` directory holds specs and outbound TODO files for repositories
 
 See [`deps/README.md`](deps/README.md) for templates.
 
+## Comments explain why, not what
+
+This applies to code comments, spec annotations, and inline notes throughout the codebase.
+
+Code already says what it does. A comment that merely restates the code adds noise. A comment that explains *why* — the constraint, the history, the non-obvious reason — adds signal.
+
+- Write `# WHY: ltrimstr removes only one char; test() handles multi-space/newline prefixes` rather than `# fix whitespace`
+- Write `# WHY: credential helper is scoped to github.com to avoid leaking the token to other hosts` rather than `# scope credential helper`
+- When code is self-explanatory, omit the comment — the best comment is often none at all
+
 ## Language
 
 Write specs in the affirmative. Describe what the system does. When a constraint is necessary, pair it with the positive form — "prefer X over Y" rather than "avoid Y." See [PHILOSOPHY.md](../PHILOSOPHY.md) for rationale.

@@ -1,0 +1,6 @@
+# YAML and shell files silently accumulate Windows CRLF line endings on checkout,
+# which breaks YAML parsing and causes container builds to fail with obscure errors.
+# Forcing LF here prevents those failures regardless of the developer's OS or git settings.
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.sh   text eol=lf

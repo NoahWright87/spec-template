@@ -45,9 +45,13 @@ claude login   # opens browser, authenticates against claude.ai
 
 This stores credentials in `~/.claude/` on the host. Mount that directory into the container — the CLI inside will find them automatically. Do **not** set `ANTHROPIC_API_KEY`.
 
+> **Important:** The worker expects credentials to be stored as `~/.claude/.credentials.json`.
+> On macOS and Windows, `claude login` stores tokens in the OS keychain by default — the file won't be present.
+> If that's the case, use Option B (API key) instead, or re-run `claude login` on a Linux machine where file-based storage is the default.
+
 ```bash
 docker run --rm \
-  -v ~/.claude:/root/.claude:ro \
+  -v ~/.claude:/home/worker/.claude:ro \
   -e GITHUB_TOKEN="your-github-token" \
   -e TARGET_REPO="owner/your-repo" \
   -v spec-worker-state:/worker/state \
@@ -121,7 +125,7 @@ docker volume create spec-worker-state
 
 ```bash
 docker run --rm \
-  -v ~/.claude:/root/.claude:ro \
+  -v ~/.claude:/home/worker/.claude:ro \
   -e GITHUB_TOKEN="your-github-token" \
   -e TARGET_REPO="owner/your-repo" \
   -v spec-worker-state:/worker/state \
@@ -145,7 +149,7 @@ Use a local cron job that calls `docker run` (Option A shown — adjust for Opti
 
 ```cron
 # Run the worker every day at 3 AM
-0 3 * * * docker run --rm -v ~/.claude:/root/.claude:ro -e GITHUB_TOKEN="..." -e TARGET_REPO="owner/repo" -v spec-worker-state:/worker/state ghcr.io/noahwright87/spec-template-worker:latest
+0 3 * * * docker run --rm -v ~/.claude:/home/worker/.claude:ro -e GITHUB_TOKEN="..." -e TARGET_REPO="owner/repo" -v spec-worker-state:/worker/state ghcr.io/noahwright87/spec-template-worker:latest
 ```
 
 ---
