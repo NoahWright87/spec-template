@@ -19,8 +19,12 @@ OUT_FILE="$OUT_DIR/ROADMAP.md"
 
 mkdir -p "$OUT_DIR"
 
-# Collect todo files, sorted
-mapfile -t TODO_FILES < <(find "$SPECS_DIR" -name "*.todo.md" | sort)
+# Collect todo files, sorted.
+# WHY avoid mapfile: mapfile requires Bash 4+; macOS ships Bash 3.2 by default.
+TODO_FILES=()
+while IFS= read -r todo_file; do
+  TODO_FILES+=("$todo_file")
+done < <(find "$SPECS_DIR" -name "*.todo.md" | sort)
 
 if [[ ${#TODO_FILES[@]} -eq 0 ]]; then
   echo "No *.todo.md files found under specs/. Nothing to generate."

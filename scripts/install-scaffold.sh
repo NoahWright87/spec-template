@@ -25,12 +25,12 @@ if [[ $# -lt 1 ]]; then
   exit 1
 fi
 
-TARGET="$(cd "$1" && pwd)"
-
-if [[ ! -d "$TARGET" ]]; then
+if [[ ! -d "$1" ]]; then
   echo "Error: target directory '$1' does not exist." >&2
   exit 1
 fi
+
+TARGET="$(cd "$1" && pwd)"
 
 echo "Installing scaffold from $DIST_DIR"
 echo "Target: $TARGET"
