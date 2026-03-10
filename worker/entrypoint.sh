@@ -87,6 +87,27 @@ else
     echo "[worker]          in permissions.allow — otherwise Claude will report tools as blocked."
 fi
 
+# ── Ensure Claude's session-env directory is writable ─────────────────────────
+# Claude Code stores per-session state in ~/.claude/session-env/<uuid>/ at runtime.
+# If a previous container run executed as root (before the non-root user was added),
+# it may have left this directory owned by root with 755 permissions, causing:
+#   EACCES: permission denied, mkdir '~/.claude/session-env/<uuid>'
+# This blocks the Bash tool and all shell operations for the entire Claude run.
+mkdir -p "$HOME/.claude/session-env" 2>/dev/null || true
+if [ ! -w "$HOME/.claude/session-env" ]; then
+    echo "[worker] ────────────────────────────────────────────────────────────────"
+    echo "[worker] ERROR: ~/.claude/session-env is not writable by '$(whoami)' (uid=$(id -u))."
+    echo "[worker]        A previous container run as root left it with wrong ownership."
+    echo "[worker]        One-time fix: delete it on the Docker host, then re-run."
+    echo "[worker]"
+    echo "[worker]          Windows:    rd /s /q C:\\.claude\\session-env"
+    echo "[worker]          Linux/Mac:  rm -rf ~/.claude/session-env"
+    echo "[worker]"
+    echo "[worker]        Claude will recreate the directory with correct ownership on the next run."
+    echo "[worker] ────────────────────────────────────────────────────────────────"
+    exit 1
+fi
+
 WORKSPACE="/worker/workspace"
 DIST_DIR="/worker/dist"
 STATE_DIR="/worker/state"
