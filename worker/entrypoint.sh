@@ -50,6 +50,15 @@ else
     fi
 fi
 
+# ── Ensure minimal Claude settings file exists ────────────────────────────────
+# The Claude CLI requires ~/.claude/settings.json to start, even in API key mode.
+# Create a minimal one if absent — covers both unmounted and mounted-but-incomplete cases.
+if [ ! -f "/root/.claude/settings.json" ]; then
+    mkdir -p /root/.claude
+    echo '{}' > /root/.claude/settings.json
+    echo "[worker] Created minimal ~/.claude/settings.json for headless operation."
+fi
+
 WORKSPACE="/worker/workspace"
 DIST_DIR="/worker/dist"
 STATE_DIR="/worker/state"
@@ -181,8 +190,27 @@ if [ -f "$CLAUDE_CONFIG_PATH/worker-instructions.md" ]; then
     echo "[worker] Using repo-local worker instructions."
 fi
 
+# Temporarily disable errexit so we can inspect the log for a helpful auth error
+# message before exiting, rather than letting the bare "Not logged in · Please
+# run /login" TUI text be the last thing the user sees.
+set +e
 claude \
     -p "$(cat "$INSTRUCTIONS_FILE")" \
     2>&1 | tee "$LOG_FILE"
+CLAUDE_EXIT=${PIPESTATUS[0]}
+set -e
+
+if [ "$CLAUDE_EXIT" -ne 0 ]; then
+    if grep -q "Not logged in" "$LOG_FILE" 2>/dev/null; then
+        echo "[worker] ────────────────────────────────────────────────────────────────"
+        echo "[worker] ERROR: Claude authentication failed."
+        echo "[worker]        Subscription OAuth tokens cannot be refreshed in a headless"
+        echo "[worker]        container (there is no browser to complete the flow)."
+        echo "[worker]        Use API key mode instead:"
+        echo "[worker]          docker run -e ANTHROPIC_API_KEY=sk-ant-... ..."
+        echo "[worker] ────────────────────────────────────────────────────────────────"
+    fi
+    exit "$CLAUDE_EXIT"
+fi
 
 echo "[worker] Run complete. Log: $LOG_FILE"
