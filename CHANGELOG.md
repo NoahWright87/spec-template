@@ -9,6 +9,7 @@ This file lists the current and previous versions, along with the features that 
 - Fix step ordering in `/intake`: rename "Step 0" to Step 2 and renumber all subsequent steps (2–7 → 3–8) so the file reads top-to-bottom without a confusing out-of-order heading; update all internal step references
 - Add `scripts/install-scaffold.sh` — deterministic shell script that copies `dist/` scaffold files into a target repo without overwriting existing files; reduces Claude token usage during onboarding
 - Add `scripts/generate-roadmap.sh` — generates `docs/ROADMAP.md` from all `specs/**/*.todo.md` files; groups items by area with links to spec files; suitable for GH Pages publishing
+- Add `.github/workflows/pages.yml` — publishes `docs/` and `specs/` to GH Pages on push to main; auto-regenerates roadmap before upload
 - Support two worker auth modes: Claude Code subscription (mount `~/.claude` from host) or Anthropic API key (`ANTHROPIC_API_KEY`); `ANTHROPIC_API_KEY` is no longer required
 - Add `specs/scaffold.md` and `specs/worker.md` — feature-level current-state specs (split from monolithic `specs/spec.md`)
 - Switch `## Reminders` bullets in `knock-out-todos.md` to `*` so grep for `^- ` skips them naturally

@@ -29,6 +29,7 @@ The system has two independent layers. A repo can use Layer 1 without ever runni
 - `scripts/generate-dist.sh` — regenerates `dist/` from scaffold source files; run after modifying any scaffold source
 - `scripts/install-scaffold.sh <target>` — copies `dist/` scaffold files into a target repo without overwriting existing files; faster/cheaper alternative to running `/respec` with Claude for the deterministic file-copy step
 - `scripts/generate-roadmap.sh` — generates `docs/ROADMAP.md` from all `specs/**/*.todo.md` files; groups open items by area with links back to individual spec files; suitable for GH Pages publishing
+- `.github/workflows/pages.yml` — publishes `docs/` and `specs/` to GitHub Pages on push to main; regenerates roadmap before upload
 
 ## Guarantees / Constraints
 

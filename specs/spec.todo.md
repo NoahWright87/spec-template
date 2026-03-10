@@ -19,8 +19,6 @@ This repo provides two products: (1) an installable spec / intake / TODO scaffol
 ## Backlog
 
 - [#5](https://github.com/NoahWright87/spec-template/issues/5) Auto-create GH issues for INTAKE items that aren't linked to one yet (optional, opt-in via config — not everyone will want this)
-- [#6](https://github.com/NoahWright87/spec-template/issues/6) GitHub Action that publishes both `/docs` and `/specs` to a single GH Pages site
-
 ## Ideas (Uncommitted)
 
 - When `/respec` runs in Update mode, compare the `dist/specs/spec.todo.md` template against the local TODO files. If the format differs (e.g. checkboxes vs plain bullets), offer to migrate existing TODO items to the current format. Apply only with user approval.
