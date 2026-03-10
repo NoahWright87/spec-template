@@ -50,14 +50,19 @@ else
     fi
 fi
 
-# ── Ensure Claude settings file exists with full tool permissions ─────────────
+# ── Write Claude settings with full tool permissions ──────────────────────────
 # The Claude CLI requires ~/.claude/settings.json to start, even in API key mode.
 # We also need explicit permissions.allow entries — --dangerously-skip-permissions
 # bypasses interactive prompts but does NOT unblock tools missing from the allow list.
-# Create a permissive settings file if absent (covers unmounted / mounted-but-incomplete).
-if [ ! -f "$HOME/.claude/settings.json" ]; then
-    mkdir -p "$HOME/.claude"
-    cat > "$HOME/.claude/settings.json" << 'SETTINGS_EOF'
+#
+# Always overwrite (not just create-if-absent) so that a settings.json copied or
+# mounted from a host machine (which won't have the worker's Bash(*) allow rules)
+# doesn't leave Claude's tools blocked.
+#
+# If ~/.claude is mounted read-only (subscription mode: -v ~/.claude:/home/worker/.claude:ro)
+# the write will fail silently — the user is responsible for permissions in that case.
+mkdir -p "$HOME/.claude"
+if cat > "$HOME/.claude/settings.json" << 'SETTINGS_EOF'
 {
   "permissions": {
     "allow": [
@@ -74,7 +79,12 @@ if [ ! -f "$HOME/.claude/settings.json" ]; then
   }
 }
 SETTINGS_EOF
-    echo "[worker] Created ~/.claude/settings.json with full tool permissions for headless operation."
+then
+    echo "[worker] Wrote ~/.claude/settings.json with full tool permissions for headless operation."
+else
+    echo "[worker] WARNING: Could not write ~/.claude/settings.json (read-only mount?)."
+    echo "[worker]          Ensure your mounted settings.json includes Bash(*), Read(*), Write(*), etc."
+    echo "[worker]          in permissions.allow — otherwise Claude will report tools as blocked."
 fi
 
 WORKSPACE="/worker/workspace"
