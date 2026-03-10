@@ -195,6 +195,7 @@ fi
 # run /login" TUI text be the last thing the user sees.
 set +e
 claude \
+    --dangerously-skip-permissions \
     -p "$(cat "$INSTRUCTIONS_FILE")" \
     2>&1 | tee "$LOG_FILE"
 CLAUDE_EXIT=${PIPESTATUS[0]}
