@@ -125,6 +125,8 @@ jobs:
             const hasUncovered = process.env.HAS_UNCOVERED === 'true';
             const raw = process.env.UNCOVERED_LIST || '';
             const uncovered = raw.trim() ? raw.trim().split('\n') : [];
+            // P avoids a bare '|' at the start of a YAML line, which trips GitHub's parser
+            const P = '|';
 
             let body;
             if (!hasUncovered) {
@@ -141,7 +143,7 @@ jobs:
                   path = path ? `${path}/${part}` : part;
                   suggestions.unshift(`\`specs/${path}/\``);
                 }
-                return `| \`${f}\` | ${suggestions.join(', ') || '`specs/`'} |`;
+                return `${P} \`${f}\` ${P} ${suggestions.join(', ') || '`specs/`'} ${P}`;
               }).join('\n');
 
               body = `${marker}
@@ -149,8 +151,8 @@ jobs:
 
 These source files changed in this PR without a corresponding update in \`specs/\`:
 
-| Source file | Suggested spec locations |
-|-------------|--------------------------|
+${P} Source file ${P} Suggested spec locations ${P}
+${P}-------------|--------------------------|
 ${rows}
 
 **To fix:** update the relevant specs and push, or run \`/spec-backfill\` to generate them.
