@@ -20,6 +20,10 @@ The system has two independent layers. A repo can use Layer 1 without ever runni
 
 **Layer 2 — Autonomous worker:** a Docker container that clones a target repo, detects whether the scaffold is installed, and either bootstraps it (install mode) or runs the intake/TODO workflow (operate mode) on a cron schedule. See [`worker.md`](worker.md).
 
+## Commands
+
+- `/intake` (Steps 1–8): Ensure INTAKE.md exists → check waiting/snoozed items → pull from GitHub Issues → read Submissions → survey TODO spec files → process each item (route/boost/ask) → selectively clear INTAKE.md → report
+
 ## Guarantees / Constraints
 
 - Scaffold files in `dist/` are auto-generated from source — edit sources, run `scripts/generate-dist.sh`, commit result

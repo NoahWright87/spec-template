@@ -5,8 +5,6 @@ This repo provides two products: (1) an installable spec / intake / TODO scaffol
 
 ## Sooner
 
-- [#12](https://github.com/NoahWright87/spec-template/issues/12) Fix step ordering in `intake.md`: rename "Step 0" to be sequentially ordered with the rest of the steps so the file reads top-to-bottom without a confusing out-of-order "Step 0"
-
 ## Later
 
 ### /refine command
