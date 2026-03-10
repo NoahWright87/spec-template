@@ -91,6 +91,7 @@ Never bake these into the image.
 | `TARGET_REPO` | Yes | — | Target repository in `owner/repo` format |
 | `TARGET_BRANCH` | No | `main` | Branch to clone and work against |
 | `CLAUDE_CONFIG_PATH` | No | `.claude` | Path to config dir in the target repo (relative to repo root) |
+| `MAX_TODOS` | No | `1` | Maximum number of TODO items to implement per fresh run. Keep low while the worker is new to ensure PRs stay small and reviewable. Increase as confidence grows. |
 
 ## Adopting a repo via the worker
 
