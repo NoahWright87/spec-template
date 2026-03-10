@@ -41,7 +41,8 @@ Layer 2 of the spec-template system — completely optional. A Docker container 
 3. Clone target repo, or `fetch` + `reset --hard` for updates
 4. **Scaffold detection:** check for `specs/AGENTS.md` in the workspace
 5. **Install mode** (marker absent): copy `/worker/dist/` into workspace → create `scaffold/bootstrap` branch → commit → push → open bootstrap PR → exit
-6. **Operate mode** (marker present): run Claude CLI non-interactively with worker instructions → tee to `/worker/state/last-run.log` → exit
+6. **Operate mode — pre-flight** (marker present): query GitHub for unprocessed issues, open TODO count, and INTAKE waiting items; if all are 0, exit early without invoking Claude (no-op run)
+7. **Operate mode — run** (marker present, work detected): pass pre-computed stats as context to Claude CLI non-interactively with worker instructions → tee to `/worker/state/last-run.log` → exit
 
 ### Scaffold detection
 
@@ -53,6 +54,18 @@ Layer 2 of the spec-template system — completely optional. A Docker container 
 - Open PR check: if a bootstrap PR is already open, the run exits early without creating a duplicate
 - File copy: `rsync --ignore-existing` — non-destructive, preserves any existing files in the target repo
 - PR title: "Install spec-template scaffold"; includes installed file list, next steps, and a link to the source repo
+
+### Pre-flight (operate mode)
+
+Before invoking Claude, the entrypoint computes three stats via `gh` and `grep`:
+
+| Stat | Source | Purpose |
+|------|--------|---------|
+| Unprocessed GH issues | `gh issue list` filtered for no intake label | Feed intake step |
+| Open TODO items | `grep -c '^- '` across `specs/**/*.todo.md` | Feed knock-out-todos step |
+| INTAKE waiting items | `grep` for `waiting for response` in `INTAKE.md` | Re-surface stale items |
+
+If all three are zero, the run exits without calling Claude (no tokens consumed). Otherwise, the stats are prepended to the Claude prompt so the model has immediate context and does not need to repeat the same queries.
 
 ### Operate mode
 
@@ -74,6 +87,7 @@ Worker operators run `docker run` with injected secrets and `TARGET_REPO`. Sched
 
 - Worker container starts, clones a target repo, detects scaffold presence, and runs the appropriate mode (install or operate)
 - Install mode: opens a bootstrap PR with the `dist/` payload; subsequent runs switch to operate mode automatically after the PR is merged
-- Operate mode: runs intake + knock-out-todos via Claude CLI; exits with code 0 on success
+- Operate mode (pre-flight): computes unprocessed issues, open TODOs, and waiting INTAKE items; exits without invoking Claude if all are zero
+- Operate mode (run): passes pre-computed stats as context; runs intake + knock-out-todos via Claude CLI; exits with code 0 on success
 - `build-worker.yml` triggers on pushes to `worker/`, `scripts/`, and `dist/`; publishes to GHCR
 - Target repos can override worker instructions by placing `.claude/worker-instructions.md` in the repo

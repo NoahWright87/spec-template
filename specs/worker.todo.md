@@ -5,7 +5,6 @@ Work to build the reusable containerized worker (Layer 2): the autonomous runner
 
 ## Backlog
 
-- [#14](https://github.com/NoahWright87/spec-template/issues/14) Reduce token usage for no-op and low-activity runs: pre-compute things deterministically (e.g. open PR count, zero comments) before invoking Claude so the model doesn't have to run shell commands itself; document a "pre-flight" phase for the worker entrypoint
 
 ## Reminders
 
