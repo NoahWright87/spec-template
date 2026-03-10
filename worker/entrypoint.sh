@@ -297,6 +297,22 @@ if [ "$_missing" -ne 0 ]; then
 fi
 echo "[worker] ✓ Required command files present in $CLAUDE_CONFIG_PATH/commands/."
 
+# Check for an already-open worker PR to avoid duplicate PRs on repeated runs.
+# Only PRs from worker/* branches count — human PRs (fix/…, feature/…) are ignored.
+# Uses the same guard pattern as install mode's bootstrap-PR check.
+_open_worker_pr=$(gh pr list \
+    --repo "$TARGET_REPO" \
+    --state open \
+    --json number,headRefName \
+    --jq '[.[] | select(.headRefName | startswith("worker/"))][0].number // empty' \
+    2>/dev/null || true)
+if [ -n "$_open_worker_pr" ]; then
+    echo "[worker] Open worker PR #$_open_worker_pr already exists on $TARGET_REPO."
+    echo "[worker] Skipping run to avoid duplicate PRs."
+    echo "[worker] Merge or close PR #$_open_worker_pr to allow the next worker run."
+    exit 0
+fi
+
 echo "[worker] Running Claude CLI..."
 cd "$WORKSPACE"
 
