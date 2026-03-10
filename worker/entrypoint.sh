@@ -108,6 +108,46 @@ if [ ! -w "$HOME/.claude/session-env" ]; then
     exit 1
 fi
 
+# ── Pre-flight checks ─────────────────────────────────────────────────────────
+# Verify everything the worker needs BEFORE invoking Claude, so failures are
+# caught immediately without spending API tokens on work that can't be committed.
+echo "[worker] Running pre-flight checks..."
+
+# 1. GitHub token: repo access + push permission (one API call, jq is installed)
+_push=$(gh api "repos/$TARGET_REPO" --jq '.permissions.push // "unknown"' 2>&1) || {
+    echo "[worker] PREFLIGHT FAIL: Cannot access '$TARGET_REPO' with the supplied GITHUB_TOKEN."
+    echo "[worker]   • Verify GITHUB_TOKEN is valid and not expired."
+    echo "[worker]   • Verify the token has 'repo' scope (classic) or 'contents:read' (fine-grained)."
+    echo "[worker]   • Verify TARGET_REPO='$TARGET_REPO' is correct (owner/repo format)."
+    exit 1
+}
+case "$_push" in
+    "true")
+        echo "[worker] ✓ GitHub: '$TARGET_REPO' accessible, push permission confirmed."
+        ;;
+    "false")
+        echo "[worker] PREFLIGHT FAIL: GITHUB_TOKEN lacks push access to '$TARGET_REPO'."
+        echo "[worker]   The worker creates branches and opens PRs — write access is required."
+        echo "[worker]   Grant write access (classic PAT: 'repo' scope; fine-grained: 'contents:write')."
+        exit 1
+        ;;
+    *)
+        # Fine-grained PATs sometimes omit the permissions object; warn and proceed.
+        echo "[worker] ⚠ Push permission unverifiable (fine-grained PAT?). Proceeding — a"
+        echo "[worker]   push failure will surface later if the token lacks write access."
+        ;;
+esac
+
+# 2. Claude CLI binary
+if ! command -v claude > /dev/null 2>&1; then
+    echo "[worker] PREFLIGHT FAIL: 'claude' CLI not found in PATH."
+    echo "[worker]   This indicates a broken container image. Rebuild: docker compose build worker"
+    exit 1
+fi
+echo "[worker] ✓ Claude CLI present: $(claude --version 2>&1 | head -1 || echo 'version unknown')"
+
+echo "[worker] Pre-flight checks passed."
+
 WORKSPACE="/worker/workspace"
 DIST_DIR="/worker/dist"
 STATE_DIR="/worker/state"
@@ -238,6 +278,24 @@ fi
 
 # ══ Operate mode ═══════════════════════════════════════════════════════════════
 # Used when the scaffold is already present. Runs intake + knock-out-todos via Claude CLI.
+
+# Pre-flight (operate mode): verify required command files exist in the cloned repo.
+# Claude reads these files to know what to do — missing files = empty run with wasted tokens.
+_missing=0
+for _cmd in "$WORKSPACE/$CLAUDE_CONFIG_PATH/commands/intake.md" \
+            "$WORKSPACE/$CLAUDE_CONFIG_PATH/commands/knock-out-todos.md"; do
+    if [ ! -f "$_cmd" ]; then
+        echo "[worker] PREFLIGHT FAIL: Required command file not found: $_cmd"
+        _missing=1
+    fi
+done
+if [ "$_missing" -ne 0 ]; then
+    echo "[worker]   The scaffold may be incomplete. Possible fixes:"
+    echo "[worker]     • Wait for the bootstrap PR to be merged if it's still open."
+    echo "[worker]     • Run /respec in the target repo to restore missing scaffold files."
+    exit 1
+fi
+echo "[worker] ✓ Required command files present in $CLAUDE_CONFIG_PATH/commands/."
 
 echo "[worker] Running Claude CLI..."
 cd "$WORKSPACE"
