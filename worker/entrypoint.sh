@@ -72,6 +72,16 @@ echo "[worker] ─────────────────────�
 echo "[worker] Starting run — $TARGET_REPO @ $TARGET_BRANCH"
 echo "[worker] ────────────────────────────────────────────────────────────────"
 
+# ── Runtime diagnostics ────────────────────────────────────────────────────────
+echo "[worker] User:     $(whoami) (uid=$(id -u) gid=$(id -g))"
+echo "[worker] Home:     $HOME"
+echo "[worker] Creds:    $([ -f "$HOME/.claude/.credentials.json" ] \
+    && echo "found ($(wc -c < "$HOME/.claude/.credentials.json") bytes)" \
+    || echo "NOT FOUND at $HOME/.claude/.credentials.json")"
+echo "[worker] Settings: $([ -f "$HOME/.claude/settings.json" ] \
+    && echo "found" \
+    || echo "NOT FOUND — will be created")"
+
 # ── Authenticate GitHub CLI and git ───────────────────────────────────────────
 # gh CLI automatically uses GITHUB_TOKEN from the environment for API calls.
 # Configure git's credential helper so HTTPS git operations (push/pull) also use it.
@@ -202,12 +212,18 @@ CLAUDE_EXIT=${PIPESTATUS[0]}
 set -e
 
 if [ "$CLAUDE_EXIT" -ne 0 ]; then
-    if grep -q "Not logged in" "$LOG_FILE" 2>/dev/null; then
+    if grep -qE "Not logged in|401|authentication_error|Invalid authentication" "$LOG_FILE" 2>/dev/null; then
         echo "[worker] ────────────────────────────────────────────────────────────────"
         echo "[worker] ERROR: Claude authentication failed."
-        echo "[worker]        Subscription OAuth tokens cannot be refreshed in a headless"
-        echo "[worker]        container (there is no browser to complete the flow)."
-        echo "[worker]        Use API key mode instead:"
+        echo "[worker]        Subscription OAuth tokens expire and cannot be refreshed"
+        echo "[worker]        in a headless container (no browser available)."
+        echo "[worker]"
+        echo "[worker]        To fix: use Claude interactively on your host machine"
+        echo "[worker]        (this triggers a token refresh), then re-copy the fresh"
+        echo "[worker]        credentials file to the Docker host:"
+        echo "[worker]          ~/.claude/.credentials.json → C:\.claude\.credentials.json"
+        echo "[worker]"
+        echo "[worker]        Or avoid this entirely with API key mode:"
         echo "[worker]          docker run -e ANTHROPIC_API_KEY=sk-ant-... ..."
         echo "[worker] ────────────────────────────────────────────────────────────────"
     fi
