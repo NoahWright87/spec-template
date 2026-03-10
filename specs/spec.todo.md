@@ -16,9 +16,6 @@ This repo provides two products: (1) an installable spec / intake / TODO scaffol
 - [#4](https://github.com/NoahWright87/spec-template/issues/4) Separate human-facing docs from AI-facing docs; make README the clear entrypoint for humans with the onboarding command surfaced first
 - [#4](https://github.com/NoahWright87/spec-template/issues/4) Audit commands and consider combining or routing via a meta `/help` command so humans have less to remember
 
-### Shell scripts for deterministic tasks
-- [#2](https://github.com/NoahWright87/spec-template/issues/2) Create shell script(s) for deterministic repo setup: copying scaffold files, creating empty spec/todo docs from templates; reduces token usage and speeds onboarding vs doing it all with Claude CLI
-
 ## Backlog
 
 - [#5](https://github.com/NoahWright87/spec-template/issues/5) Auto-create GH issues for INTAKE items that aren't linked to one yet (optional, opt-in via config — not everyone will want this)

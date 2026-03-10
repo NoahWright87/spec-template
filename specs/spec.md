@@ -24,6 +24,11 @@ The system has two independent layers. A repo can use Layer 1 without ever runni
 
 - `/intake` (Steps 1–8): Ensure INTAKE.md exists → check waiting/snoozed items → pull from GitHub Issues → read Submissions → survey TODO spec files → process each item (route/boost/ask) → selectively clear INTAKE.md → report
 
+## Scripts
+
+- `scripts/generate-dist.sh` — regenerates `dist/` from scaffold source files; run after modifying any scaffold source
+- `scripts/install-scaffold.sh <target>` — copies `dist/` scaffold files into a target repo without overwriting existing files; faster/cheaper alternative to running `/respec` with Claude for the deterministic file-copy step
+
 ## Guarantees / Constraints
 
 - Scaffold files in `dist/` are auto-generated from source — edit sources, run `scripts/generate-dist.sh`, commit result
