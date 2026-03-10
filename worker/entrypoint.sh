@@ -50,13 +50,31 @@ else
     fi
 fi
 
-# ── Ensure minimal Claude settings file exists ────────────────────────────────
+# ── Ensure Claude settings file exists with full tool permissions ─────────────
 # The Claude CLI requires ~/.claude/settings.json to start, even in API key mode.
-# Create a minimal one if absent — covers both unmounted and mounted-but-incomplete cases.
+# We also need explicit permissions.allow entries — --dangerously-skip-permissions
+# bypasses interactive prompts but does NOT unblock tools missing from the allow list.
+# Create a permissive settings file if absent (covers unmounted / mounted-but-incomplete).
 if [ ! -f "$HOME/.claude/settings.json" ]; then
     mkdir -p "$HOME/.claude"
-    echo '{}' > "$HOME/.claude/settings.json"
-    echo "[worker] Created minimal ~/.claude/settings.json for headless operation."
+    cat > "$HOME/.claude/settings.json" << 'SETTINGS_EOF'
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "MultiEdit(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "WebFetch(*)"
+    ],
+    "deny": []
+  }
+}
+SETTINGS_EOF
+    echo "[worker] Created ~/.claude/settings.json with full tool permissions for headless operation."
 fi
 
 WORKSPACE="/worker/workspace"
