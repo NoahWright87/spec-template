@@ -136,14 +136,14 @@ You cannot confidently route the item without additional context.
 
 2. **Post a comment on the GH issue**, clearly marked as from Claude — not the user:
    ```
-   *Posted by Claude via /intake — this is an automated message, not a human response.*
+   🤖 Claude via /intake — automated message, not from the developer.
 
    To route this issue I need a bit more information:
    [1–3 specific questions]
 
    My best routing guess: [target file or component] (confidence: low/medium — reason)
 
-   Reply here and re-run `/intake` to proceed.
+   Reply here to proceed.
    ```
    If a human was present in the chat during this run and discussion happened: summarize that conversation in the comment before the questions, then post. This keeps GH as the canonical record even for supervised runs.
 

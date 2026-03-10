@@ -297,21 +297,104 @@ if [ "$_missing" -ne 0 ]; then
 fi
 echo "[worker] ✓ Required command files present in $CLAUDE_CONFIG_PATH/commands/."
 
-# Check for an already-open worker PR to avoid duplicate PRs on repeated runs.
-# Only PRs from worker/* branches count — human PRs (fix/…, feature/…) are ignored.
-# Uses the same guard pattern as install mode's bootstrap-PR check.
-_open_worker_pr=$(gh pr list \
+# ── Activity check: is there new work for Claude to do? ──────────────────────
+# Run lightweight gh API calls before invoking Claude so runs with nothing
+# new to do exit immediately without spending any API tokens.
+#
+# Claude runs if ANY of the following are true:
+#   1. No open worker/* PR exists (TODOs may be waiting; Claude decides)
+#   2. An open worker/* PR has human comments (user.type=="User", body not 🤖-prefixed)
+#   3. Open issues exist with no intake label (intake:filed / rejected / ignore)
+#   4. A filed issue's most recent comment is human (user.type=="User", body not 🤖-prefixed)
+#
+# "Human" = GitHub user type is "User" AND body does NOT start with 🤖.
+#   - Personal-PAT mode: human and worker share the same login, so the 🤖
+#     prefix is the ONLY reliable discriminator. Login is not checked here.
+#   - Service-account mode: worker login differs AND worker uses 🤖 prefix.
+#     The user.type=="User" filter additionally excludes GitHub Bot accounts
+#     (github-actions[bot], dependabot, etc.) so they never trigger a run.
+echo "[worker] Checking for new activity..."
+_should_run=0
+_run_reason=""
+
+# Condition 1 — no open worker/* PR ───────────────────────────────────────────
+_worker_pr=$(gh pr list \
     --repo "$TARGET_REPO" \
     --state open \
     --json number,headRefName \
     --jq '[.[] | select(.headRefName | startswith("worker/"))][0].number // empty' \
     2>/dev/null || true)
-if [ -n "$_open_worker_pr" ]; then
-    echo "[worker] Open worker PR #$_open_worker_pr already exists on $TARGET_REPO."
-    echo "[worker] Skipping run to avoid duplicate PRs."
-    echo "[worker] Merge or close PR #$_open_worker_pr to allow the next worker run."
+if [ -z "$_worker_pr" ]; then
+    _should_run=1
+    _run_reason="no open worker PR"
+fi
+
+# Condition 2 — human comments on the open worker PR ──────────────────────────
+if [ "$_should_run" -eq 0 ] && [ -n "$_worker_pr" ]; then
+    # jq filter: select comments from real users that don't carry the 🤖 prefix
+    _human_filter='[.[] | select(.user.type == "User" and (.body | ltrimstr(" ") | ltrimstr("\n") | startswith("🤖") | not))] | length'
+    for _api in issues pulls; do
+        _n=$(gh api "repos/$TARGET_REPO/$_api/$_worker_pr/comments" \
+            --jq "$_human_filter" 2>/dev/null || echo "0")
+        if [ "${_n:-0}" -gt 0 ]; then
+            _should_run=1
+            _run_reason="${_n} human comment(s) on worker PR #$_worker_pr"
+            break
+        fi
+    done
+fi
+
+# Condition 3 — open issues with no intake label ──────────────────────────────
+_unprocessed=$(gh issue list \
+    --repo "$TARGET_REPO" \
+    --state open \
+    --json number,labels \
+    --jq '[.[] | select(
+        (.labels | map(.name) |
+            (contains(["intake:filed"]) or contains(["intake:rejected"]) or contains(["intake:ignore"]))
+        ) | not
+    )] | length' 2>/dev/null || echo "0")
+if [ "${_unprocessed:-0}" -gt 0 ]; then
+    _should_run=1
+    _run_reason="${_unprocessed} unprocessed issue(s) without intake labels"
+fi
+
+# Condition 4 — filed issue with human as the most recent commenter ────────────
+if [ "$_should_run" -eq 0 ]; then
+    _filed=$(gh issue list \
+        --repo "$TARGET_REPO" \
+        --state open \
+        --label "intake:filed" \
+        --json number \
+        --jq '.[].number' 2>/dev/null || echo "")
+    for _inum in $_filed; do
+        _last=$(gh api "repos/$TARGET_REPO/issues/$_inum/comments" \
+            --jq 'if length == 0 then "empty"
+                  elif (last | .user.type == "User" and (.body | ltrimstr(" ") | ltrimstr("\n") | startswith("🤖") | not))
+                  then "human"
+                  else "robot"
+                  end' 2>/dev/null || echo "robot")
+        if [ "$_last" = "human" ]; then
+            _should_run=1
+            _run_reason="human comment on filed issue #${_inum}"
+            break
+        fi
+    done
+fi
+
+# Decision ─────────────────────────────────────────────────────────────────────
+if [ "$_should_run" -eq 0 ]; then
+    echo "[worker] No new activity requiring Claude's attention — skipping run."
+    if [ -n "$_worker_pr" ]; then
+        echo "[worker] Worker PR #$_worker_pr is open and up to date."
+        echo "[worker] Trigger the next run by:"
+        echo "[worker]   • Commenting on PR #$_worker_pr (without the 🤖 prefix)"
+        echo "[worker]   • Opening a new GitHub issue"
+        echo "[worker]   • Merging or closing PR #$_worker_pr"
+    fi
     exit 0
 fi
+echo "[worker] Activity detected: $_run_reason — proceeding."
 
 echo "[worker] Running Claude CLI..."
 cd "$WORKSPACE"

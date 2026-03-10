@@ -34,6 +34,7 @@ Implement the easiest open TODO items (default: 5). Follow the full workflow: re
 - Keep changes **minimal and focused** — do not refactor beyond what each TODO requires.
 - Commit work in logical chunks with clear, concise commit messages.
 - GitHub and the target repo are the primary system of record; defer judgment calls to issues/PRs.
+- **All comments you post to GitHub issues or PRs — without exception — must begin with `🤖 Claude:`.** The worker's cron scheduler uses this prefix to distinguish your comments from human replies when deciding whether to start the next run. A comment without the prefix looks like a human response and will trigger an unnecessary run.
 
 ## On completion
 

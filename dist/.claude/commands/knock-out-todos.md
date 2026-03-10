@@ -72,8 +72,8 @@ When a chosen item lives in `specs/deps/{repo}.todo.md`, follow this flow instea
      - [{repo}#{N}]({url}) Downstream issue opened
    ```
 4. Cross-link both issues with comments for traceability:
-   - On the local issue: `gh issue comment {local-N} --body "Downstream issue opened in {repo}: [{repo}#{N}]({url})"`
-   - On the downstream issue: `gh issue comment {dep-N} --repo {owner}/{repo} --body "Opened on behalf of [{this-repo}#{local-N}]({url})"`
+   - On the local issue: `gh issue comment {local-N} --body "🤖 Claude: Downstream issue opened in {repo}: [{repo}#{N}]({url})"`
+   - On the downstream issue: `gh issue comment {dep-N} --repo {owner}/{repo} --body "🤖 Claude: Opened on behalf of [{this-repo}#{local-N}]({url})"`
 5. Leave the TODO item in place — it stays open until the downstream issue is closed. Sub-bullet reconciliation (step 2 above) will unblock it on the next run.
 
 ## Preferred tools and actions
