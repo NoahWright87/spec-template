@@ -28,7 +28,7 @@ CLAUDE_CONFIG_PATH="${CLAUDE_CONFIG_PATH:-.claude}"
 #                 Optionally set ANTHROPIC_BASE_URL to target a custom endpoint (enterprise proxy).
 #   Subscription: Omit ANTHROPIC_API_KEY. Mount ~/.claude from the host so the Claude
 #                 Code CLI can find the OAuth credentials from `claude login`.
-#                 e.g. docker run -v ~/.claude:/root/.claude:ro ...
+#                 e.g. docker run -v ~/.claude:/home/worker/.claude:ro ...
 #                 IMPORTANT: credentials must be stored as files in ~/.claude/.credentials.json.
 #                 If `claude login` stored tokens in your OS keychain (macOS/Windows default),
 #                 the file won't be present — use API key mode instead.
@@ -39,13 +39,13 @@ if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
     fi
 else
     echo "[worker] Auth mode: Claude Code subscription (expecting mounted ~/.claude credentials)"
-    if [ ! -f "/root/.claude/.credentials.json" ]; then
-        echo "[worker] ERROR: Subscription credentials not found at ~/.claude/.credentials.json"
+    if [ ! -f "$HOME/.claude/.credentials.json" ]; then
+        echo "[worker] ERROR: Subscription credentials not found at \$HOME/.claude/.credentials.json"
         echo "[worker]        On macOS/Windows, 'claude login' stores tokens in the OS keychain,"
         echo "[worker]        not as a file — use API key mode instead:"
         echo "[worker]          docker run -e ANTHROPIC_API_KEY=<key> ..."
         echo "[worker]        Or if credentials are file-based, mount the directory:"
-        echo "[worker]          docker run -v ~/.claude:/root/.claude:ro ..."
+        echo "[worker]          docker run -v ~/.claude:/home/worker/.claude:ro ..."
         exit 1
     fi
 fi
@@ -53,9 +53,9 @@ fi
 # ── Ensure minimal Claude settings file exists ────────────────────────────────
 # The Claude CLI requires ~/.claude/settings.json to start, even in API key mode.
 # Create a minimal one if absent — covers both unmounted and mounted-but-incomplete cases.
-if [ ! -f "/root/.claude/settings.json" ]; then
-    mkdir -p /root/.claude
-    echo '{}' > /root/.claude/settings.json
+if [ ! -f "$HOME/.claude/settings.json" ]; then
+    mkdir -p "$HOME/.claude"
+    echo '{}' > "$HOME/.claude/settings.json"
     echo "[worker] Created minimal ~/.claude/settings.json for headless operation."
 fi
 
