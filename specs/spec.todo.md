@@ -19,6 +19,9 @@ This repo provides two products: (1) an installable spec / intake / TODO scaffol
 ## Backlog
 
 - [#5](https://github.com/NoahWright87/spec-template/issues/5) Auto-create GH issues for INTAKE items that aren't linked to one yet (optional, opt-in via config — not everyone will want this)
+- [#13](https://github.com/NoahWright87/spec-template/issues/13) Auto-generate a roadmap view from TODO spec files and place it in `/docs` for easy GH Pages publishing; should link back to individual spec files
+- [#14](https://github.com/NoahWright87/spec-template/issues/14) Reduce token usage, especially for no-op runs: detect programmatically when no work is needed (e.g. no open PRs + no new comments) and skip Claude invocation entirely; pass pre-computed context to reduce terminal command overhead
+
 ## Ideas (Uncommitted)
 
 - When `/respec` runs in Update mode, compare the `dist/specs/spec.todo.md` template against the local TODO files. If the format differs (e.g. checkboxes vs plain bullets), offer to migrate existing TODO items to the current format. Apply only with user approval.
