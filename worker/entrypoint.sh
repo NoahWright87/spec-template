@@ -21,6 +21,9 @@ set -euo pipefail
 # ── Optional parameters with defaults ─────────────────────────────────────────
 TARGET_BRANCH="${TARGET_BRANCH:-main}"
 CLAUDE_CONFIG_PATH="${CLAUDE_CONFIG_PATH:-.claude}"
+# WHY default 1: keeps each PR small and focused so humans can review and merge
+# quickly. Increase as confidence in the worker grows.
+MAX_TODOS="${MAX_TODOS:-1}"
 
 # ── Auth mode detection ────────────────────────────────────────────────────────
 # Two supported modes:
@@ -413,13 +416,25 @@ if [ -f "$CLAUDE_CONFIG_PATH/worker-instructions.md" ]; then
     echo "[worker] Using repo-local worker instructions."
 fi
 
+# Build the prompt: base instructions + injected run parameters.
+# WHY append rather than substitute: appending keeps the instructions file
+# self-contained and readable on its own; the parameters section at the end
+# acts as a final override that Claude reads last and therefore weighs most.
+_prompt="$(cat "$INSTRUCTIONS_FILE")
+
+- **MAX_TODOS**: $MAX_TODOS — maximum number of TODO items to knock out in a single fresh run
+- **TARGET_REPO**: $TARGET_REPO
+"
+
+echo "[worker] Run parameters: MAX_TODOS=$MAX_TODOS"
+
 # Temporarily disable errexit so we can inspect the log for a helpful auth error
 # message before exiting, rather than letting the bare "Not logged in · Please
 # run /login" TUI text be the last thing the user sees.
 set +e
 claude \
     --dangerously-skip-permissions \
-    -p "$(cat "$INSTRUCTIONS_FILE")" \
+    -p "$_prompt" \
     2>&1 | tee "$LOG_FILE"
 CLAUDE_EXIT=${PIPESTATUS[0]}
 set -e
