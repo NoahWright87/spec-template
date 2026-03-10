@@ -136,7 +136,7 @@ You cannot confidently route the item without additional context.
 
 2. **Post a comment on the GH issue**, clearly marked as from Claude — not the user:
    ```
-   🤖 Claude via /intake — automated message, not from the developer.
+   🤖 Claude: automated message from /intake — not from the developer.
 
    To route this issue I need a bit more information:
    [1–3 specific questions]

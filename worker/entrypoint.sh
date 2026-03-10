@@ -174,9 +174,13 @@ echo "[worker] Settings: $([ -f "$HOME/.claude/settings.json" ] \
 # ── Authenticate GitHub CLI and git ───────────────────────────────────────────
 # gh CLI automatically uses GITHUB_TOKEN from the environment for API calls.
 # Configure git's credential helper so HTTPS git operations (push/pull) also use it.
-git config --global credential.helper \
+#
+# WHY scope to https://github.com: a global credential helper sends GITHUB_TOKEN
+# to every HTTPS host git contacts (mirrors, submodule servers, etc.), which would
+# silently leak the token to any server the worker clones from.
+git config --global 'credential.https://github.com.helper' \
     '!f() { echo "username=x-access-token"; echo "password=$GITHUB_TOKEN"; }; f'
-echo "[worker] GitHub auth configured (GITHUB_TOKEN → gh CLI + git credential helper)."
+echo "[worker] GitHub auth configured (GITHUB_TOKEN → gh CLI + git credential helper, scoped to github.com)."
 
 # ── Clone or update the target repository ─────────────────────────────────────
 if [ -d "$WORKSPACE/.git" ]; then
@@ -331,8 +335,11 @@ fi
 
 # Condition 2 — human comments on the open worker PR ──────────────────────────
 if [ "$_should_run" -eq 0 ] && [ -n "$_worker_pr" ]; then
-    # jq filter: select comments from real users that don't carry the 🤖 prefix
-    _human_filter='[.[] | select(.user.type == "User" and (.body | ltrimstr(" ") | ltrimstr("\n") | startswith("🤖") | not))] | length'
+    # jq filter: select comments from real users that don't carry the 🤖 prefix.
+    # WHY test() not ltrimstr(): ltrimstr removes only one exact character;
+    # a body starting with "  🤖" (two spaces) or "\n🤖" would slip through.
+    # test("^[[:space:]]*🤖") correctly matches any leading whitespace before the emoji.
+    _human_filter='[.[] | select(.user.type == "User" and (.body | test("^[[:space:]]*🤖") | not))] | length'
     for _api in issues pulls; do
         _n=$(gh api "repos/$TARGET_REPO/$_api/$_worker_pr/comments" \
             --jq "$_human_filter" 2>/dev/null || echo "0")
@@ -370,7 +377,7 @@ if [ "$_should_run" -eq 0 ]; then
     for _inum in $_filed; do
         _last=$(gh api "repos/$TARGET_REPO/issues/$_inum/comments" \
             --jq 'if length == 0 then "empty"
-                  elif (last | .user.type == "User" and (.body | ltrimstr(" ") | ltrimstr("\n") | startswith("🤖") | not))
+                  elif (last | .user.type == "User" and (.body | test("^[[:space:]]*🤖") | not))
                   then "human"
                   else "robot"
                   end' 2>/dev/null || echo "robot")

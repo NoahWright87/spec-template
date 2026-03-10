@@ -46,6 +46,18 @@ The fix was to remove the checkbox entirely. Plain bullets have no "checked" sta
 - Prefer formats that make the *right* action the *obvious* action, rather than relying on instruction text to override visual instinct
 - When instructions and format conflict, the format usually wins — fix the format
 
+## Comments explain why, not what
+
+Code already says what it does. Comments exist to explain why — the context, the constraint, the history that isn't visible in the code itself.
+
+**Why it matters:** A comment that restates code is noise that must be maintained in sync with the code or it becomes a lie. A comment that explains the *reason* for a choice remains useful even as the code evolves — it's the "load-bearing" information that would otherwise be lost.
+
+**In practice:**
+- Write `# WHY: forcing LF here prevents obscure container failures from CRLF in YAML` rather than `# Enforce LF line endings`
+- Write `# WHY: test() matches any leading whitespace; ltrimstr(" ") strips only one character` rather than `# regex instead of ltrimstr`
+- When code is self-explanatory, add no comment — a comment that merely restates the code is noise
+- Use `# WHY:` as a prefix for standalone explanatory comments (optional convention, but makes them greppable)
+
 ## Specs as source of truth
 
 Code implements specs. Specs describe what the system is and how it behaves. When they diverge, the spec is the authority — either the code needs fixing, or the spec needs updating.
