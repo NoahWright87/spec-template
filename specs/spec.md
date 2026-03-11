@@ -25,6 +25,11 @@ The system has two independent layers. A repo can use Layer 1 without ever runni
 - `/intake` (Steps 1–8): Ensure INTAKE.md exists → check waiting/snoozed items → pull from GitHub Issues → read `auto_create_issues` config from `specs/.meta.json` (controls whether manual submissions later get auto-filed as GH issues; absent = asks user) → read Submissions → survey TODO spec files → process each item (route/boost/ask) → selectively clear INTAKE.md → report
   - **Auto-create GH issues:** opt-in via `"auto_create_issues": true` in `specs/.meta.json`; if the key is absent, `/intake` asks the user. When enabled and `gh` is authenticated, creates a GH issue for each unlinked manual submission and labels it `intake:filed`. Off by default.
 
+- `/refine` (Steps 1–6): Find highest-priority TODO items → re-check waiting items for new GH responses → load GH issue + spec context → assess clarity and estimate effort → write technical detail and estimates → commit and open PR
+  - **Effort estimates:** XS / S / M / L / XL / Unknown — added inline as `*(effort: M)*` on the TODO item
+  - **Supervised mode:** iterates with user in chat until sign-off, then commits and opens PR
+  - **Headless mode:** posts clarifying questions to GH issues for unresolved product decisions, adds best-effort technical detail, commits and opens PR automatically; picks up GH replies on the next run
+
 ## Scripts
 
 - `scripts/generate-dist.sh` — regenerates `dist/` from scaffold source files; run after modifying any scaffold source
