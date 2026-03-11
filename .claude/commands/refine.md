@@ -3,6 +3,7 @@
 Add technical detail, effort estimates, and priority adjustments to the highest-priority open TODO items — the middle step between `/intake` and `/knock-out-todos`.
 
 The user may specify how many items to refine — default is **3** if not stated.
+Number to refine: `$ARGUMENTS` (default 3 if blank).
 
 ---
 
