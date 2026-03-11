@@ -3,6 +3,9 @@
 ## Summary
 Work to build the reusable containerized worker (Layer 2): the autonomous runner that clones a target repo, loads worker instructions, and executes the intake / TODO workflow via Claude CLI. Runs as a cron job — spins up, does its work, persists memory to a Docker volume, and shuts down.
 
+## Backlog
+
+
 ## Reminders
 
 * Move completed items to `worker.md` — this file is for future plans, not current state

@@ -34,14 +34,14 @@ Items waiting for more information stay in this file with a date annotation: `*(
 
 Then tell the user the file has been created and stop — there is nothing to process yet.
 
-## Step 0 — Check waiting and snoozed items
+## Step 2 — Check waiting and snoozed items
 
 Read `specs/INTAKE.md` and scan for items with date annotations before doing anything else.
 
 **For each item annotated `*(waiting for response, asked YYYY-MM-DD)*`:**
 1. If the item has a `[#N](url)` prefix, run `gh issue view N --json comments` and check whether any comments were posted after the asked date.
 2. New comments found → strip the annotation and re-add the item to the processing queue for this run.
-3. No new comments and older than **7 days** (default; see AGENTS Instructions to adjust) → add to the stale list. Surface in the Step 7 report: "Still waiting on #N (asked YYYY-MM-DD)."
+3. No new comments and older than **7 days** (default; see AGENTS Instructions to adjust) → add to the stale list. Surface in the Step 8 report: "Still waiting on #N (asked YYYY-MM-DD)."
 4. No new comments and within 7 days → skip silently.
 
 **For each item annotated `*(snoozed until YYYY-MM-DD)*`:**
@@ -52,10 +52,10 @@ Read `specs/INTAKE.md` and scan for items with date annotations before doing any
 - Update its annotation to `*(snoozed until YYYY-MM-DD)*` based on what they said.
 - Move on without posting to GH.
 
-## Step 2 — Pull from GitHub Issues
+## Step 3 — Pull from GitHub Issues
 
 1. Run `gh auth status` using the Bash tool.
-   - If `gh` is not installed or the user is not authenticated: skip the rest of this step, make a note for the report, and continue to Step 3.
+   - If `gh` is not installed or the user is not authenticated: skip the rest of this step, make a note for the report, and continue to Step 4.
 2. Run: `gh issue list --state open --json number,title,url,labels --limit 100`
 3. Filter out any issues that already carry one of these labels: `intake:filed`, `intake:rejected`, `intake:ignore`.
 4. For each remaining issue, append a bullet to the `## Submissions` section of `specs/INTAKE.md`:
@@ -64,19 +64,19 @@ Read `specs/INTAKE.md` and scan for items with date annotations before doing any
    ```
 5. If no unprocessed issues are found, note it and continue.
 
-## Step 3 — Read the Submissions
+## Step 4 — Read the Submissions
 
 Read `specs/INTAKE.md`. Extract every bullet under `## Submissions` that is not:
 - The placeholder `*Add your ideas here*`
-- A `*(waiting for response...)*` or `*(snoozed until...)*` item that was not re-queued in Step 0
+- A `*(waiting for response...)*` or `*(snoozed until...)*` item that was not re-queued in Step 2
 
-If nothing remains to process, tell the user and stop (include the Step 7 report if there were stale items to surface).
+If nothing remains to process, tell the user and stop (include the Step 8 report if there were stale items to surface).
 
-## Step 4 — Survey existing TODO spec files
+## Step 5 — Survey existing TODO spec files
 
 Use Grep to find all `*.todo.md` files under `specs/`. Read their headings so you understand what components/areas each file covers. Do not read every line — just enough to map file → component/area.
 
-## Step 5 — Process each item
+## Step 6 — Process each item
 
 For each item, determine which of three paths applies:
 
@@ -107,7 +107,7 @@ You can confidently identify the target `.todo.md` and the item is not a duplica
    - **User rejects the idea:** `gh issue edit N --add-label "intake:rejected"` — skip filing
    - **User says leave it alone:** `gh issue edit N --add-label "intake:ignore"` — skip filing
 
-5. **Clear from INTAKE.md** (handled in Step 6).
+5. **Clear from INTAKE.md** (handled in Step 7).
 
 ---
 
@@ -124,7 +124,7 @@ You find an existing TODO item that covers the same ground.
 
 3. **Apply `intake:filed`** to the duplicate GH issue (if applicable).
 
-4. **Clear from INTAKE.md** (handled in Step 6).
+4. **Clear from INTAKE.md** (handled in Step 7).
 
 ---
 
@@ -151,11 +151,11 @@ You cannot confidently route the item without additional context.
 
 3. **Annotate the item** in INTAKE.md by appending `*(waiting for response, asked YYYY-MM-DD)*` (use today's date).
 
-4. **Leave it in INTAKE.md** — do not clear it in Step 6.
+4. **Leave it in INTAKE.md** — do not clear it in Step 7.
 
 ---
 
-## Step 6 — Selective clearing of INTAKE.md
+## Step 7 — Selective clearing of INTAKE.md
 
 After all items are processed, update `specs/INTAKE.md`:
 - **Remove** items that were routed (Path 1) or duplicate+boosted (Path 2).
@@ -165,7 +165,7 @@ After all items are processed, update `specs/INTAKE.md`:
   - *Add your ideas here*.
   ```
 
-## Step 7 — Report
+## Step 8 — Report
 
 Give the user a brief summary:
 - Which items were filed and where.
