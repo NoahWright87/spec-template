@@ -60,6 +60,8 @@ Write `specs/.meta.json` with the source repo URL, the current commit hash (fetc
 }
 ```
 
+Users may add optional config keys to this file at any time (e.g. `"auto_create_issues": true`). Never remove or overwrite keys not listed above.
+
 Then give the user a brief summary: which files were written, which optional files were included, and what to do next (run `/intake` or add specs).
 
 ---
@@ -94,7 +96,7 @@ The repo is already running this template. Fetch upstream changes and apply them
    - **Changed:** Show the user a summary of what changed and ask whether to apply it.
 4. Apply approved updates. Leave everything else in place.
 5. **Check TODO format migration.** Compare the fetched `specs/spec.todo.md` template against all local `*.todo.md` files. If the template uses a different bullet format than what the repo's TODO files currently use (e.g. the template now uses plain `- ` bullets but local files still use `- [ ]` checkboxes), tell the user what changed and offer to migrate. If the user approves, update the local TODO files to the current format, preserving all content. Apply only what the user approves.
-6. Update `specs/.meta.json` with the new commit hash and today's date.
+6. Update `specs/.meta.json` with the new commit hash and today's date. Preserve all other keys exactly — do not remove or modify user-set fields such as `auto_create_issues`.
 7. Report what was updated, what was skipped, and whether a TODO format migration was applied.
 
 ---
