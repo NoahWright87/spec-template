@@ -58,7 +58,13 @@ Read `specs/INTAKE.md` and scan for items with date annotations before doing any
 
 ## Step 3 — Pull from GitHub Issues
 
-**Config:** Read `specs/.meta.json` if it exists. Store the `auto_create_issues` boolean (default: `false`) — used in Step 6 to create GH issues for manual submissions that have no issue link yet.
+**Config:** Read `specs/.meta.json` if it exists and check `auto_create_issues`:
+- `true` → enable issue auto-creation for this run.
+- `false` → disable; skip silently.
+- Key absent (or `.meta.json` missing entirely) → ask the user: *"Should I create a GitHub issue for each manual submission that has no issue link? (Set `auto_create_issues` in `specs/.meta.json` to avoid this prompt.)"*
+  - User confirms → treat as `true` for this run.
+  - User declines → treat as `false` for this run.
+  - No user present (headless) → treat as `false`; note in the Step 8 report that `auto_create_issues` was unset and no issues were created.
 
 1. Run `gh auth status` using the Bash tool.
    - If `gh` is not installed or the user is not authenticated: skip the rest of this step, make a note for the report, and continue to Step 4.
@@ -100,10 +106,11 @@ You can confidently identify the target `.todo.md` and the item is not a duplica
    ```
    For manual items, write a concise, actionable description. If the submission has sub-bullets, preserve them as indented sub-bullets.
 
-3. **Auto-create a GH issue** if the item has no `[#N](url)` prefix and `auto_create_issues` is `true` in `specs/.meta.json`:
-   - Run: `gh issue create --title "<concise title>" --body "<item description>"`
+3. **Auto-create a GH issue** if the item has no `[#N](url)` prefix, `auto_create_issues` is `true` for this run, **and** Step 3 confirmed that the GitHub CLI is installed and authenticated:
+   - If Step 3 reported that `gh` is missing or unauthenticated, **do not** attempt `gh issue create`; treat auto-creation as disabled for this run and record it in the Step 8 report.
+   - Otherwise, run: `gh issue create --title "<concise title>" --body "<item description>"`
    - Extract the issue number from the returned URL and update the entry to prepend `[#N](url)`.
-   - If creation fails (e.g. GH unauthenticated or flag disabled), continue without a link and note any failures in the Step 8 report.
+   - If creation still fails for any other reason (e.g. permission or network error), continue without a link and note the failure in the Step 8 report.
 
 4. **Create the spec file if missing.** Use this minimal template:
    ```markdown
