@@ -7,11 +7,6 @@ This repo provides two products: (1) an installable spec / intake / TODO scaffol
 
 ## Later
 
-### /refine command
-- [#3](https://github.com/NoahWright87/spec-template/issues/3) Add `/refine` command: middle step between `/intake` and `/knock-out-todos` that clarifies vague TODOs by asking the user questions interactively (or posting to GH issue comments in headless mode); opens a PR with updated spec/todo docs, added technical detail, effort estimates (XS/S/M/L/XL/Unknown), and any priority adjustments
-  - Focus on higher-priority items first (higher in the TODO doc, more linked issues, etc.)
-  - Ask user (or GH comments) when intent or product decisions are unclear — do not assume
-
 ### Reduce cognitive load for humans
 - [#4](https://github.com/NoahWright87/spec-template/issues/4) Audit commands and consider combining or routing via a meta `/help` command so humans have less to remember
 

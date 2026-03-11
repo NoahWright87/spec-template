@@ -112,6 +112,7 @@ These are the files this command installs and keeps current. Everything else in 
 | `.claude/commands/knock-out-todos.md` | `/knock-out-todos` command |
 | `.claude/commands/spec-backfill.md` | `/spec-backfill` command |
 | `.claude/commands/respec.md` | This command |
+| `.claude/commands/refine.md` | `/refine` command |
 | `.github/workflows/spec-check.yml` | PR check: warns when source changes lack spec updates |
 | `specs/deps/README.md` | Explains the deps/ pattern; templates for dep specs and dep TODOs |
 
