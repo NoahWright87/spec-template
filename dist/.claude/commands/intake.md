@@ -58,6 +58,8 @@ Read `specs/INTAKE.md` and scan for items with date annotations before doing any
 
 ## Step 3 — Pull from GitHub Issues
 
+**Config:** Read `specs/.meta.json` if it exists. Store the `auto_create_issues` boolean (default: `false`) — used in Step 6 to create GH issues for manual submissions that have no issue link yet.
+
 1. Run `gh auth status` using the Bash tool.
    - If `gh` is not installed or the user is not authenticated: skip the rest of this step, make a note for the report, and continue to Step 4.
 2. Run: `gh issue list --state open --json number,title,url,labels --limit 100`
@@ -98,7 +100,12 @@ You can confidently identify the target `.todo.md` and the item is not a duplica
    ```
    For manual items, write a concise, actionable description. If the submission has sub-bullets, preserve them as indented sub-bullets.
 
-3. **Create the spec file if missing.** Use this minimal template:
+3. **Auto-create a GH issue** if the item has no `[#N](url)` prefix and `auto_create_issues` is `true` in `specs/.meta.json`:
+   - Run: `gh issue create --title "<concise title>" --body "<item description>"`
+   - Extract the issue number from the returned URL and update the entry to prepend `[#N](url)`.
+   - If creation fails (e.g. GH unauthenticated or flag disabled), continue without a link and note any failures in the Step 8 report.
+
+4. **Create the spec file if missing.** Use this minimal template:
    ```markdown
    # <Component/Area/Dep Name> — TODOs
 
@@ -106,12 +113,12 @@ You can confidently identify the target `.todo.md` and the item is not a duplica
    ```
    For dep TODOs, see `specs/deps/README.md` for the recommended template.
 
-4. **Apply a GitHub label** if the item has a `[#N](url)` prefix:
+5. **Apply a GitHub label** if the item has a `[#N](url)` prefix:
    - **Filed:** `gh issue edit N --add-label "intake:filed"`
    - **User rejects the idea:** `gh issue edit N --add-label "intake:rejected"` — skip filing
    - **User says leave it alone:** `gh issue edit N --add-label "intake:ignore"` — skip filing
 
-5. **Clear from INTAKE.md** (handled in Step 7).
+6. **Clear from INTAKE.md** (handled in Step 7).
 
 ---
 
@@ -178,7 +185,7 @@ Give the user a brief summary:
 - Any spec files newly created.
 - **Waiting:** any items newly marked as waiting for more info (with the GH link).
 - **Stale:** any items that have been waiting longer than 7 days with no reply.
-- **GitHub:** which issues were labeled and how. If `gh` was unavailable, note it here.
+- **GitHub:** which issues were labeled and how; any issues auto-created for manual submissions (when `auto_create_issues` is enabled). If `gh` was unavailable, note it here.
 
 ## Preferred tools
 

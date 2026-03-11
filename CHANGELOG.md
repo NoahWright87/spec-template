@@ -6,6 +6,7 @@ This file lists the current and previous versions, along with the features that 
 
 ## WIP
 
+- Add opt-in auto-create GH issues to `/intake`: when `"auto_create_issues": true` is set in `specs/.meta.json`, `/intake` creates a GH issue for each manual submission lacking a `[#N](url)` link, then labels it `intake:filed` as usual; off by default
 - Fix step ordering in `/intake`: rename "Step 0" to Step 2 and renumber all subsequent steps (2–7 → 3–8) so the file reads top-to-bottom without a confusing out-of-order heading; update all internal step references
 - Add `scripts/install-scaffold.sh` — deterministic shell script that copies `dist/` scaffold files into a target repo without overwriting existing files; reduces Claude token usage during onboarding
 - Add `scripts/generate-roadmap.sh` — generates `docs/ROADMAP.md` from all `specs/**/*.todo.md` files; groups items by area with links to spec files; suitable for GH Pages publishing

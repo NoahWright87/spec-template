@@ -22,7 +22,8 @@ The system has two independent layers. A repo can use Layer 1 without ever runni
 
 ## Commands
 
-- `/intake` (Steps 1–8): Ensure INTAKE.md exists → check waiting/snoozed items → pull from GitHub Issues → read Submissions → survey TODO spec files → process each item (route/boost/ask) → selectively clear INTAKE.md → report
+- `/intake` (Steps 1–8): Ensure INTAKE.md exists → check waiting/snoozed items → pull from GitHub Issues (reads `auto_create_issues` config from `specs/.meta.json`) → read Submissions → survey TODO spec files → process each item (route/boost/ask) → selectively clear INTAKE.md → report
+  - **Auto-create GH issues:** opt-in via `"auto_create_issues": true` in `specs/.meta.json`; when enabled, `/intake` creates a GH issue for each manual submission that has no `[#N](url)` link, then labels it `intake:filed` as usual. Off by default.
 
 ## Scripts
 
