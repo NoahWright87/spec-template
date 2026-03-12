@@ -6,6 +6,7 @@ This file lists the current and previous versions, along with the features that 
 
 ## WIP
 
+- Add `/what-now` meta command: thin interactive entrypoint that presents a menu (via AskUserQuestion) and delegates to the chosen command by reading that file on demand — only the selected command enters context; add Commands + Headless mode sections to `scaffold/specs/AGENTS.md` so autonomous agents have the same routing map with a global rule that "ask the user" means posting to GH issues or PRs
 - Add `/refine` command: middle step between `/intake` and `/knock-out-todos`; prioritizes highest-priority TODO items, adds technical detail and effort estimates (XS/S/M/L/XL/Unknown) as inline annotations, asks clarifying questions interactively in supervised mode or via GH issue comments in headless mode, and commits + opens a PR with proposed updates
 - Add opt-in auto-create GH issues to `/intake`: when `"auto_create_issues": true` is set in `specs/.meta.json`, `/intake` creates a GH issue for each manual submission lacking a `[#N](url)` link, then labels it `intake:filed` as usual; off by default
 - Fix step ordering in `/intake`: rename "Step 0" to Step 2 and renumber all subsequent steps (2–7 → 3–8) so the file reads top-to-bottom without a confusing out-of-order heading; update all internal step references

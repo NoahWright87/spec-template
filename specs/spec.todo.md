@@ -7,10 +7,9 @@ This repo provides two products: (1) an installable spec / intake / TODO scaffol
 
 ## Later
 
-### Reduce cognitive load for humans
-- [#4](https://github.com/NoahWright87/spec-template/issues/4) Audit commands and consider combining or routing via a meta `/help` command so humans have less to remember
-
 ## Backlog
+
+- Sync general-purpose improvements from work fork *(blocked: waiting for work-specific code to be stripped before sharing)*
 
 ## Ideas (Uncommitted)
 

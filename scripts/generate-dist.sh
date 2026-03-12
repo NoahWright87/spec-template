@@ -50,7 +50,7 @@ rm -rf "$DIST_DIR"
 
 # ── Commands (.claude/commands/) ───────────────────────────────────────────────
 echo "Copying commands..."
-for cmd in respec.md intake.md knock-out-todos.md spec-backfill.md refine.md; do
+for cmd in respec.md intake.md knock-out-todos.md spec-backfill.md refine.md what-now.md; do
   copy_with_header \
     "$REPO_ROOT/.claude/commands/$cmd" \
     "$DIST_DIR/.claude/commands/$cmd"
