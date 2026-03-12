@@ -58,6 +58,23 @@ Code already says what it does. Comments exist to explain why — the context, t
 - When code is self-explanatory, add no comment — a comment that merely restates the code is noise
 - Use `# WHY:` as a prefix for standalone explanatory comments (optional convention, but makes them greppable)
 
+## Small and fast
+
+Ship small changes frequently. Keep PRs reviewable by a human in a few minutes. This is not a new idea — it predates AI — but it matters *more* when agents are in the loop, not less.
+
+**Why it matters for agents:** A large PR is a large context window. The more code, spec, and history an agent must hold at once, the more likely something slips — a constraint forgotten, a decision reversed three files later, a hallucination that would have been caught earlier. Small changes let the agent focus. Small changes let the agent finish.
+
+Large PRs also slow down the feedback loop between a human reviewer (or Copilot) and the agent running the next iteration. Every round-trip on a 200-file PR costs more tokens, more time, and more risk than three round-trips on three focused PRs. DORA metrics — deployment frequency, lead time, change failure rate, time to restore — describe what good looks like. They apply at least as strongly to agent-driven development as to team-driven development, possibly more so.
+
+**Why it matters for humans:** A small PR is a PR a human can actually read. Adoption follows trust, and trust follows comprehension. A reviewer who can scan a diff in five minutes, check a preview deployment, and say "yes, this is what I wanted" will merge with confidence. A reviewer who opens a 100-file PR from an AI and has no idea where to start will hesitate, request changes, or close it.
+
+**In practice:**
+- One logical change per PR — one command, one feature, one fix
+- Write PRs that could be explained in a single sentence
+- Prefer merging a partial implementation and iterating over holding out for "complete"
+- If a PR is growing large, stop and ask whether it should be split before finishing
+- Design commands and worker runs to produce one small PR per run, not one large one
+
 ## Specs as source of truth
 
 Code implements specs. Specs describe what the system is and how it behaves. When they diverge, the spec is the authority — either the code needs fixing, or the spec needs updating.
