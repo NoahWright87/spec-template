@@ -1,5 +1,5 @@
 <!-- AUTO-GENERATED — do not edit directly.
-     Source: .claude/commands/refine.md
+     Source: .claude/commands/lib/refine.md
      Regenerate: run scripts/generate-dist.sh from the repo root. -->
 
 # Refine

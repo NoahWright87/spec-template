@@ -1,3 +1,7 @@
+<!-- AUTO-GENERATED — do not edit directly.
+     Source: .claude/commands/what-now.md
+     Regenerate: run scripts/generate-dist.sh from the repo root. -->
+
 # What Now?
 
 Not sure which command to run? Use this as your starting point.

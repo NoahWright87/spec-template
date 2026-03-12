@@ -53,6 +53,27 @@ When a spec section cannot be determined from available context, mark it with a 
 
 This format renders visibly in GitHub, is greppable (`> \*\*TODO\*\*`), and signals clearly that the section needs attention. Fill a placeholder whenever context allows — even a partial answer is better than leaving it blank. Run `/spec-backfill` at any time to scan for remaining placeholders and check overall spec completeness.
 
+## Commands
+
+These slash commands manage the spec-driven workflow. Each command file is self-contained — read it and follow it exactly.
+
+| Command | What it does |
+|---------|-------------|
+| `/what-now` | Interactive entrypoint — presents a menu and delegates to the right command |
+| `/intake` | Sort ideas and GitHub Issues into the right TODO spec files |
+| `/refine` | Clarify vague TODOs, add effort estimates, open a PR with proposed spec updates |
+| `/knock-out-todos` | Implement the easiest open TODO items |
+| `/spec-backfill` | Generate spec files from an existing codebase |
+| `/respec` | Install or update the spec system |
+
+### Headless mode
+
+When running without an interactive user (e.g. in a container or CI job), the instruction "ask the user" in any command file means:
+
+- Post a comment on the relevant GitHub Issue, clearly marked `🤖 Claude:` to distinguish it from a human comment.
+- Or, if a PR is open for this run, post the question as a PR comment instead.
+- Never block waiting for input — make a best-effort decision, document the uncertainty in the comment, and continue.
+
 ## Dependency specs
 
 The `specs/deps/` directory holds specs and outbound TODO files for repositories this project depends on.
