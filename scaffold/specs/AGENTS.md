@@ -51,24 +51,29 @@ This format renders visibly in GitHub, is greppable (`> \*\*TODO\*\*`), and sign
 
 ## Commands
 
-These slash commands manage the spec-driven workflow. Each command file is self-contained — read it and follow it exactly.
+`/what-now` is the only user-facing slash command. Run it and it will present a menu.
 
 | Command | What it does |
 |---------|-------------|
 | `/what-now` | Interactive entrypoint — presents a menu and delegates to the right command |
-| `/intake` | Sort ideas and GitHub Issues into the right TODO spec files |
-| `/refine` | Clarify vague TODOs, add effort estimates, open a PR with proposed spec updates |
-| `/knock-out-todos` | Implement the easiest open TODO items |
-| `/spec-backfill` | Generate spec files from an existing codebase |
-| `/respec` | Install or update the spec system |
 
 ### Headless mode
 
-When running without an interactive user (e.g. in a container or CI job), the instruction "ask the user" in any command file means:
+When running without an interactive user (e.g. in a container or CI job), bypass `/what-now` and call the appropriate command file directly. The instruction "ask the user" in any command file means:
 
 - Post a comment on the relevant GitHub Issue, clearly marked `🤖 Claude:` to distinguish it from a human comment.
 - Or, if a PR is open for this run, post the question as a PR comment instead.
 - Never block waiting for input — make a best-effort decision, document the uncertainty in the comment, and continue.
+
+Available commands for direct invocation — each file is self-contained, read it and follow it exactly:
+
+| Command file | What it does |
+|--------------|-------------|
+| `.claude/commands/lib/intake.md` | Sort ideas and GitHub Issues into the right TODO spec files |
+| `.claude/commands/lib/refine.md` | Clarify vague TODOs, add effort estimates, open a PR with proposed spec updates |
+| `.claude/commands/lib/knock-out-todos.md` | Implement the easiest open TODO items |
+| `.claude/commands/lib/spec-backfill.md` | Generate spec files from an existing codebase |
+| `.claude/commands/lib/respec.md` | Install or update the spec system |
 
 ## Dependency specs
 

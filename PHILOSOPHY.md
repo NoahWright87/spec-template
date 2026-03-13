@@ -1,12 +1,12 @@
 # Philosophy
 
-Old software practices didn't stop being true when AI arrived. DORA metrics, lean systems, clear communication, and single sources of truth all apply — sometimes in familiar ways, sometimes in ways that feel strange. This file explains why this system is designed the way it is, through that lens.
+Good engineering didn't change when AI arrived. DORA metrics, lean systems, clear communication, single sources of truth — all still apply. This file explains why this system is built the way it is.
 
 ---
 
 ## Engineering practices
 
-### Minimal as hell
+### More code = more risk
 
 Every file in this system earns its place. Adoption friction is the enemy of good tooling — the more you ask someone to install, the less likely they are to actually use it. When in doubt, leave it out.
 
@@ -15,25 +15,25 @@ Every file in this system earns its place. Adoption friction is the enemy of goo
 - Add files only when there is a clear, felt need
 - Prefer prose over structure, and add structure only when it genuinely helps
 
-### Context is prime real estate
+### Specs are comments at scale
 
-Context is finite and valuable — for AI and humans alike. Everything loaded into context should earn its place by carrying signal. Anything that merely restates what's already clear wastes the budget.
+The best comments don't describe what the code does — any competent reader can see that. They explain *why*: why this approach over another, why this constraint exists, what the business rule is. They guide the next developer who couldn't ask the original author.
 
-This applies everywhere: comments that describe *what* the code does (the code already does that), specs that describe implementation rather than behavior, inline docs that repeat what the surrounding context already makes obvious. When context is full of noise, the signal gets lost.
+Specs work the same way, but at a higher level. The code describes *what* it does. The spec describes *why* the system is built the way it is — intent, acceptance criteria, business rules, expectations. The stuff that isn't obvious from reading the code.
 
-**Why it matters:** An agent reading a large, noisy context will miss constraints, reverse decisions, and hallucinate. A human reviewer in the same position will skim and misunderstand. The cost is the same — just measured in different units.
+This isn't a new idea. It's how good documentation has always worked. AI makes it more important, not different.
 
 **In practice:**
 - Write `# WHY: forcing LF here prevents obscure container failures from CRLF in YAML` rather than `# Enforce LF line endings`
 - When code is self-explanatory, add no comment — restating it is noise
-- Specs describe behavior, not implementation — implementation detail belongs in the code
+- Specs describe behavior and intent, not implementation — implementation detail belongs in the code
 - If something is already clear from context, don't restate it
 
 ### Small and fast
 
-Ship small changes frequently. Keep PRs reviewable by a human in a few minutes. This is not a new idea — it predates AI — but it matters *more* when agents are in the loop, not less.
+Constant, tiny, incremental change has always been the safest and fastest way to build software. This isn't new — it's why DORA metrics correlate deployment frequency with stability. A 10-line PR can be reviewed, understood, and merged with confidence. A 100-file PR will be skimmed, misunderstood, or left to rot.
 
-**Why it matters:** A large PR is a large context window. The more code, spec, and history an agent must hold at once, the more likely something slips — a constraint forgotten, a decision reversed three files later, a hallucination that would have been caught earlier. Small changes let the agent focus. Small changes let the agent finish. And a small PR is a PR a human can actually read: a reviewer who can scan a diff in five minutes and say "yes, this is what I wanted" will merge with confidence. A reviewer who opens a 100-file PR from an AI will hesitate.
+Agents aren't different. They're modelled after us. The more a developer has to hold in their head at once, the more likely they forget a constraint, reverse a decision, or miss something obvious. Agents work the same way — the bigger the task, the more likely something slips. Small tasks let the agent focus. Small tasks let the agent finish.
 
 DORA metrics — deployment frequency, lead time, change failure rate, time to restore — describe what good looks like. They apply at least as strongly to agent-driven development as to team-driven development, possibly more so.
 
@@ -46,12 +46,15 @@ DORA metrics — deployment frequency, lead time, change failure rate, time to r
 
 ### Specs as source of truth
 
-Code implements specs. Specs describe what the system is and how it behaves. When they diverge, the spec is the authority — either the code needs fixing, or the spec needs updating.
+Specs lean toward PRD — they describe what the system should do, why it works the way it does, and what matters to users. They define intent, acceptance criteria, and business rules. The stuff that isn't obvious from reading the code.
+
+Todo files lean toward HLD — they describe how a change will be made: technical decisions, dependencies, implementation approach. Once the work is done, that detail lives in the code. The spec records the outcome, not the path.
 
 **Why it matters:** Without a single authoritative source, decisions scatter across PRs, comments, and memory. The spec makes intent visible, reviewable, and durable across agent runs and team members.
 
 **In practice:**
-- When implementing, update the spec first — implementation follows the spec, not the reverse
+- Keep specs in sync with the code — if the spec says the system does something, the code better do it
+- If something isn't implemented yet, it belongs in the todo file, not the spec
 - When code and spec diverge, treat it as a bug in one or the other
 - A spec without an implementation is a plan; an implementation without a spec is a guess
 

@@ -4,7 +4,7 @@ This file lists the current and previous versions, along with the features that 
 
 # Versions
 
-## WIP
+## 0.1.0
 
 - Add `/what-now` meta command: thin interactive entrypoint that presents a menu (via AskUserQuestion) and delegates to the chosen command by reading that file on demand — only the selected command enters context; add Commands + Headless mode sections to `scaffold/specs/AGENTS.md` so autonomous agents have the same routing map with a global rule that "ask the user" means posting to GH issues or PRs
 - Add `/refine` command: middle step between `/intake` and `/knock-out-todos`; prioritizes highest-priority TODO items, adds technical detail and effort estimates (XS/S/M/L/XL/Unknown) as inline annotations, asks clarifying questions interactively in supervised mode or via GH issue comments in headless mode, and commits + opens a PR with proposed updates
