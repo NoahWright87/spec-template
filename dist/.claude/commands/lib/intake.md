@@ -1,5 +1,5 @@
 <!-- AUTO-GENERATED — do not edit directly.
-     Source: .claude/commands/intake.md
+     Source: .claude/commands/lib/intake.md
      Regenerate: run scripts/generate-dist.sh from the repo root. -->
 
 # Intake

@@ -1,7 +1,3 @@
-<!-- AUTO-GENERATED — do not edit directly.
-     Source: .claude/commands/respec.md
-     Regenerate: run scripts/generate-dist.sh from the repo root. -->
-
 # /respec
 
 Apply or refresh the [spec-template](https://github.com/NoahWright87/spec-template) system in this repository.
@@ -112,11 +108,12 @@ These are the files this command installs and keeps current. Everything else in 
 | `specs/spec.md` | Template for writing a new spec |
 | `specs/spec.todo.md` | Template for writing a new TODO spec |
 | `specs/INTAKE.md` | Intake bucket for ideas and requests |
-| `.claude/commands/intake.md` | `/intake` command |
-| `.claude/commands/knock-out-todos.md` | `/knock-out-todos` command |
-| `.claude/commands/spec-backfill.md` | `/spec-backfill` command |
-| `.claude/commands/respec.md` | This command |
-| `.claude/commands/refine.md` | `/refine` command |
+| `.claude/commands/what-now.md` | `/what-now` command (main entry point) |
+| `.claude/commands/lib/intake.md` | `/intake` logic (invoked via `/what-now`) |
+| `.claude/commands/lib/knock-out-todos.md` | `/knock-out-todos` logic (invoked via `/what-now`) |
+| `.claude/commands/lib/spec-backfill.md` | `/spec-backfill` logic (invoked via `/what-now`) |
+| `.claude/commands/lib/respec.md` | This command (invoked via `/what-now`) |
+| `.claude/commands/lib/refine.md` | `/refine` logic (invoked via `/what-now`) |
 | `.github/workflows/spec-check.yml` | PR check: warns when source changes lack spec updates |
 | `specs/deps/README.md` | Explains the deps/ pattern; templates for dep specs and dep TODOs |
 

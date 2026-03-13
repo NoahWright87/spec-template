@@ -1,5 +1,5 @@
 <!-- AUTO-GENERATED — do not edit directly.
-     Source: .claude/commands/knock-out-todos.md
+     Source: .claude/commands/lib/knock-out-todos.md
      Regenerate: run scripts/generate-dist.sh from the repo root. -->
 
 # Knock Out TODOs

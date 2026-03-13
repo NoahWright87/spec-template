@@ -1,5 +1,5 @@
 <!-- AUTO-GENERATED — do not edit directly.
-     Source: .claude/commands/spec-backfill.md
+     Source: .claude/commands/lib/spec-backfill.md
      Regenerate: run scripts/generate-dist.sh from the repo root. -->
 
 # /spec-backfill

@@ -49,6 +49,32 @@ When a spec section cannot be determined from available context, mark it with a 
 
 This format renders visibly in GitHub, is greppable (`> \*\*TODO\*\*`), and signals clearly that the section needs attention. Fill a placeholder whenever context allows — even a partial answer is better than leaving it blank. Run `/spec-backfill` at any time to scan for remaining placeholders and check overall spec completeness.
 
+## Commands
+
+`/what-now` is the only user-facing slash command. Run it and it will present a menu.
+
+| Command | What it does |
+|---------|-------------|
+| `/what-now` | Interactive entrypoint — presents a menu and delegates to the right command |
+
+### Headless mode
+
+When running without an interactive user (e.g. in a container or CI job), bypass `/what-now` and call the appropriate command file directly. The instruction "ask the user" in any command file means:
+
+- Post a comment on the relevant GitHub Issue, clearly marked `🤖 Claude:` to distinguish it from a human comment.
+- Or, if a PR is open for this run, post the question as a PR comment instead.
+- Never block waiting for input — make a best-effort decision, document the uncertainty in the comment, and continue.
+
+Available commands for direct invocation — each file is self-contained, read it and follow it exactly:
+
+| Command file | What it does |
+|--------------|-------------|
+| `.claude/commands/lib/intake.md` | Sort ideas and GitHub Issues into the right TODO spec files |
+| `.claude/commands/lib/refine.md` | Clarify vague TODOs, add effort estimates, open a PR with proposed spec updates |
+| `.claude/commands/lib/knock-out-todos.md` | Implement the easiest open TODO items |
+| `.claude/commands/lib/spec-backfill.md` | Generate spec files from an existing codebase |
+| `.claude/commands/lib/respec.md` | Install or update the spec system |
+
 ## Dependency specs
 
 The `specs/deps/` directory holds specs and outbound TODO files for repositories this project depends on.

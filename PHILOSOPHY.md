@@ -1,8 +1,68 @@
 # Philosophy
 
-These are the principles behind this template system. They inform how commands, specs, and documentation are written, and how the system is designed to evolve.
+Good engineering didn't change when AI arrived. DORA metrics, lean systems, clear communication, single sources of truth — all still apply. This file explains why this system is built the way it is.
 
-## Affirmative language
+---
+
+## Engineering practices
+
+### More code = more risk
+
+Every file in this system earns its place. Adoption friction is the enemy of good tooling — the more you ask someone to install, the less likely they are to actually use it. When in doubt, leave it out.
+
+**In practice:**
+- Ship the smallest thing that works
+- Add files only when there is a clear, felt need
+- Prefer prose over structure, and add structure only when it genuinely helps
+
+### Specs are comments at scale
+
+The best comments don't describe what the code does — any competent reader can see that. They explain *why*: why this approach over another, why this constraint exists, what the business rule is. They guide the next developer who couldn't ask the original author.
+
+Specs work the same way, but at a higher level. The code describes *what* it does. The spec describes *why* the system is built the way it is — intent, acceptance criteria, business rules, expectations. The stuff that isn't obvious from reading the code.
+
+This isn't a new idea. It's how good documentation has always worked. AI makes it more important, not different.
+
+**In practice:**
+- Write `# WHY: forcing LF here prevents obscure container failures from CRLF in YAML` rather than `# Enforce LF line endings`
+- When code is self-explanatory, add no comment — restating it is noise
+- Specs describe behavior and intent, not implementation — implementation detail belongs in the code
+- If something is already clear from context, don't restate it
+
+### Small and fast
+
+Constant, tiny, incremental change has always been the safest and fastest way to build software. This isn't new — it's why DORA metrics correlate deployment frequency with stability. A 10-line PR can be reviewed, understood, and merged with confidence. A 100-file PR will be skimmed, misunderstood, or left to rot.
+
+Agents aren't different. They're modelled after us. The more a developer has to hold in their head at once, the more likely they forget a constraint, reverse a decision, or miss something obvious. Agents work the same way — the bigger the task, the more likely something slips. Small tasks let the agent focus. Small tasks let the agent finish.
+
+DORA metrics — deployment frequency, lead time, change failure rate, time to restore — describe what good looks like. They apply at least as strongly to agent-driven development as to team-driven development, possibly more so.
+
+**In practice:**
+- One logical change per PR — one command, one feature, one fix
+- Write PRs that could be explained in a single sentence
+- Prefer merging a partial implementation and iterating over holding out for "complete"
+- If a PR is growing large, stop and ask whether it should be split before finishing
+- Design commands and worker runs to produce one small PR per run, not one large one
+
+### Specs as source of truth
+
+Specs lean toward PRD — they describe what the system should do, why it works the way it does, and what matters to users. They define intent, acceptance criteria, and business rules. The stuff that isn't obvious from reading the code.
+
+Todo files lean toward HLD — they describe how a change will be made: technical decisions, dependencies, implementation approach. Once the work is done, that detail lives in the code. The spec records the outcome, not the path.
+
+**Why it matters:** Without a single authoritative source, decisions scatter across PRs, comments, and memory. The spec makes intent visible, reviewable, and durable across agent runs and team members.
+
+**In practice:**
+- Keep specs in sync with the code — if the spec says the system does something, the code better do it
+- If something isn't implemented yet, it belongs in the todo file, not the spec
+- When code and spec diverge, treat it as a bug in one or the other
+- A spec without an implementation is a plan; an implementation without a spec is a guess
+
+---
+
+## Communication and writing practices
+
+### Affirmative language
 
 Instructions in this system are written in the affirmative wherever possible. Say what to do — pair any constraint with its positive form.
 
@@ -13,24 +73,15 @@ Instructions in this system are written in the affirmative wherever possible. Sa
 - Write "confirm with the user before writing" rather than "never write without asking"
 - When a negative is necessary, pair it with the positive alternative: "prefer X over Y," "do X instead of Y"
 
-## Minimal as hell
-
-Every file in this system earns its place. Adoption friction is the enemy of good tooling — the more you ask someone to install, the less likely they are to actually use it. When in doubt, leave it out.
-
-In practice:
-- Ship the smallest thing that works
-- Add files only when there is a clear, felt need
-- Prefer prose over structure, and add structure only when it genuinely helps
-
-## Repetition
+### Repetition
 
 Important things should be stated in multiple places. This is intentional, not sloppiness.
 
-LLMs and humans alike benefit from reinforcement. A rule seen once can be skimmed past and forgotten. A rule that appears in every relevant file — restated briefly, in context — tends to stick. Markdown files in this system should include a `## Reminders` section at the bottom that restates the most critical rules in brief. Yes, this creates redundancy across files. That redundancy is the point.
+LLMs and humans alike benefit from reinforcement. A rule seen once can be skimmed past and forgotten. A rule that appears in every relevant file — restated briefly, in context — tends to stick. Yes, this creates redundancy across files. That redundancy is the point.
 
 *If it's important, it bears repeating.*
 
-## Proximity shapes behavior
+### Proximity shapes behavior
 
 Context is subtly powerful. The format, structure, and visual affordances of a document actively shape what an agent does next — often more powerfully than instructions written elsewhere on the page.
 
@@ -45,21 +96,3 @@ The fix was to remove the checkbox entirely. Plain bullets have no "checked" sta
 - Affordances are instructions. A checkbox says "check me." A delete-only format says "remove me."
 - Prefer formats that make the *right* action the *obvious* action, rather than relying on instruction text to override visual instinct
 - When instructions and format conflict, the format usually wins — fix the format
-
-## Comments explain why, not what
-
-Code already says what it does. Comments exist to explain why — the context, the constraint, the history that isn't visible in the code itself.
-
-**Why it matters:** A comment that restates code is noise that must be maintained in sync with the code or it becomes a lie. A comment that explains the *reason* for a choice remains useful even as the code evolves — it's the "load-bearing" information that would otherwise be lost.
-
-**In practice:**
-- Write `# WHY: forcing LF here prevents obscure container failures from CRLF in YAML` rather than `# Enforce LF line endings`
-- Write `# WHY: test() matches any leading whitespace; ltrimstr(" ") strips only one character` rather than `# regex instead of ltrimstr`
-- When code is self-explanatory, add no comment — a comment that merely restates the code is noise
-- Use `# WHY:` as a prefix for standalone explanatory comments (optional convention, but makes them greppable)
-
-## Specs as source of truth
-
-Code implements specs. Specs describe what the system is and how it behaves. When they diverge, the spec is the authority — either the code needs fixing, or the spec needs updating.
-
-This keeps decisions visible, reviewable, and separate from implementation noise.

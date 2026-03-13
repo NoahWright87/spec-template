@@ -50,10 +50,13 @@ rm -rf "$DIST_DIR"
 
 # ── Commands (.claude/commands/) ───────────────────────────────────────────────
 echo "Copying commands..."
+copy_with_header \
+  "$REPO_ROOT/.claude/commands/what-now.md" \
+  "$DIST_DIR/.claude/commands/what-now.md"
 for cmd in respec.md intake.md knock-out-todos.md spec-backfill.md refine.md; do
   copy_with_header \
-    "$REPO_ROOT/.claude/commands/$cmd" \
-    "$DIST_DIR/.claude/commands/$cmd"
+    "$REPO_ROOT/.claude/commands/lib/$cmd" \
+    "$DIST_DIR/.claude/commands/lib/$cmd"
 done
 
 # ── Spec templates (scaffold/specs/) ──────────────────────────────────────────
