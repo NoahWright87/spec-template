@@ -54,6 +54,19 @@ Avoid items that:
 
 7. Run the appropriate build or validation command for the project to confirm changes compile and pass checks.
 
+8. Commit all changes, push, and open a PR:
+   ```
+   git add <files>
+   git commit -m "knock-out-todos: <brief summary of items implemented>"
+   git push
+   gh pr create --title "implement: <area or item names>" --body "..."
+   ```
+   PR body should include:
+   - List of items implemented with a one-line description each
+   - `closes #N` for each GH-linked item (GitHub closes the issue on merge)
+
+9. Follow `.claude/commands/lib/pr-review.md` — self-review the diff, leave explanatory comments, and respond to any Copilot or reviewer comments.
+
 ---
 
 ## Dep TODO flow

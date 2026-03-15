@@ -44,6 +44,21 @@ DORA metrics — deployment frequency, lead time, change failure rate, time to r
 - If a PR is growing large, stop and ask whether it should be split before finishing
 - Design commands and worker runs to produce one small PR per run, not one large one
 
+### Be your own first reviewer
+
+Before asking anyone else to review your work, review it yourself. Go through the diff as if it were a stranger's PR — look for bugs, unclear changes, missing context. Fix what you find. Then, for any change that might confuse a reviewer, leave a comment explaining it. Not in the code — in the PR. Code comments explain the code; PR comments explain the change.
+
+This is standard advice for engineers, and the same expectation applies here. The goal is to hand over a PR that a reviewer can move through quickly, not one they have to puzzle over.
+
+**Why it matters:** A reviewer who opens a PR full of obvious fixes, unexplained large diffs, and unacknowledged Copilot comments will slow down or check out entirely. A self-reviewed PR with explanatory context is faster to review, faster to merge, and more likely to get useful feedback instead of just surface-level cleanup notes.
+
+**In practice:**
+- Review your own diff before anyone else does — treat it like someone else's code
+- Batch all self-review fixes into one commit before pushing; each push re-triggers auto-reviewers
+- Leave PR comments to explain *why a change looks the way it does*, not to document *what the code does*
+- Respond to every review comment — unacknowledged comments signal the feedback was ignored
+- When you resolve a comment, say why in your reply before resolving it
+
 ### Specs as source of truth
 
 Specs lean toward PRD — they describe what the system should do, why it works the way it does, and what matters to users. They define intent, acceptance criteria, and business rules. The stuff that isn't obvious from reading the code.

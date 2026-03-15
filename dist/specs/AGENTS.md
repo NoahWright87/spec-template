@@ -76,6 +76,7 @@ Available commands for direct invocation — each file is self-contained, read i
 | `.claude/commands/lib/intake.md` | Sort ideas and GitHub Issues into the right TODO spec files |
 | `.claude/commands/lib/refine.md` | Clarify vague TODOs, add effort estimates, open a PR with proposed spec updates |
 | `.claude/commands/lib/knock-out-todos.md` | Implement the easiest open TODO items |
+| `.claude/commands/lib/pr-review.md` | Self-review an open PR, leave explanatory comments, respond to reviewer comments |
 | `.claude/commands/lib/spec-backfill.md` | Generate spec files from an existing codebase |
 | `.claude/commands/lib/respec.md` | Install or update the spec system |
 

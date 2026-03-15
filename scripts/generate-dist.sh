@@ -53,7 +53,7 @@ echo "Copying commands..."
 copy_with_header \
   "$REPO_ROOT/.claude/commands/what-now.md" \
   "$DIST_DIR/.claude/commands/what-now.md"
-for cmd in respec.md intake.md knock-out-todos.md spec-backfill.md refine.md; do
+for cmd in respec.md intake.md knock-out-todos.md spec-backfill.md refine.md pr-review.md; do
   copy_with_header \
     "$REPO_ROOT/.claude/commands/lib/$cmd" \
     "$DIST_DIR/.claude/commands/lib/$cmd"

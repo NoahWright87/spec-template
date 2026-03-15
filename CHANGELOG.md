@@ -4,6 +4,13 @@ This file lists the current and previous versions, along with the features that 
 
 # Versions
 
+## WIP
+
+- Add status assessment to `/what-now`: pre-flight check reads open PRs with comments, stale waiting items, INTAKE content, unrefined/unimplemented TODOs, and open GH Issues, then labels options ⭐ Highly recommended / Recommended and orders them by urgency; preference (`"auto"` vs `"on_demand"`) stored in `specs/.meta.json`, prompted on first use
+- Add `/pr-review` command: codifies PR expectations — self-review the diff, batch-fix in one commit, leave explanatory PR comments (context about the change, not the code), respond to Copilot and human review comments; all AI comments start with 🤖; referenced automatically by `refine` and `knock-out-todos` after opening a PR
+- Add PR creation step to `knock-out-todos`: opens a PR after implementing changes and chains into `/pr-review`
+- Add "Be your own first reviewer" section to `PHILOSOPHY.md`
+
 ## 0.1.0
 
 - Add `/what-now` meta command: thin interactive entrypoint that presents a menu (via AskUserQuestion) and delegates to the chosen command by reading that file on demand — only the selected command enters context; add Commands + Headless mode sections to `scaffold/specs/AGENTS.md` so autonomous agents have the same routing map with a global rule that "ask the user" means posting to GH issues or PRs

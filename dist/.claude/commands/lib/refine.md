@@ -166,6 +166,8 @@ After the user gives sign-off in Step 3:
 
 **PR title format:** `refine: add detail and estimates for [item names or area]`
 
+After the PR is created, follow `.claude/commands/lib/pr-review.md` — self-review the diff, leave explanatory comments, and respond to any Copilot or reviewer comments.
+
 ---
 
 ## Step 6 — Report
