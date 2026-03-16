@@ -4,12 +4,12 @@ This file lists the current and previous versions, along with the features that 
 
 # Versions
 
-## WIP
+## 0.2.0
 
-- Add status assessment to `/what-now`: pre-flight check reads open PRs with comments, stale waiting items, INTAKE content, unrefined/unimplemented TODOs, and open GH Issues, then labels options ⭐ Highly recommended / Recommended and orders them by urgency; preference (`"auto"` vs `"on_demand"`) stored in `specs/.meta.json`, prompted on first use
-- Add `/pr-review` command: codifies PR expectations — self-review the diff, batch-fix in one commit, leave explanatory PR comments (context about the change, not the code), respond to Copilot and human review comments; all AI comments start with 🤖; referenced automatically by `refine` and `knock-out-todos` after opening a PR
-- Add PR creation step to `knock-out-todos`: opens a PR after implementing changes and chains into `/pr-review`
-- Add "Be your own first reviewer" section to `PHILOSOPHY.md`
+- `/what-now` now reads the repo's current state before showing options — it checks for open PRs needing review, stale waiting items, unrefined TODOs, and more, then surfaces the most pressing options first with ⭐ labels. Saves your preference so it only asks once.
+- New `/pr-review` command guides a complete PR review cycle: self-review the diff, leave explanatory comments for reviewers, and respond to any Copilot and human feedback. Auto-triggered after any command that opens a PR.
+- `knock-out-todos` now opens a PR automatically after implementing items and chains into `/pr-review`.
+- Added "Be your own first reviewer" to `PHILOSOPHY.md` — the same expectation we hold engineers to applies to AI.
 
 ## 0.1.0
 

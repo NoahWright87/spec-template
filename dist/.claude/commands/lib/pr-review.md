@@ -8,9 +8,36 @@ PR review expectations. Follow these any time you open or update a PR — whethe
 
 ---
 
+## PR Description
+
+A good PR description guides reviewers and helps them feel confident approving. Before reviewing the diff, make sure the description is in good shape:
+
+- **Keep it high-level** — focus on *what* changed and *why*, not implementation details. Reviewers care about what the software does, not how it does it.
+- **Include screenshots** for any new or changed UI. Link or embed them directly in the description.
+- **Keep it in sync** — as you respond to comments and make changes, re-read the description and update it if the PR has drifted from what it says.
+
+---
+
 ## Step 1 — Self-review
 
-Read the full diff of the PR using the Bash tool:
+First, check for merge conflicts:
+
+```
+gh pr view <number> --json mergeable -q .mergeable
+```
+
+If conflicts exist, resolve them before reviewing the diff:
+```
+git merge origin/<base-branch>
+# resolve conflicts, keeping only this PR's intended changes
+git add <files>
+git commit -m "merge: sync with <base-branch>"
+git push
+```
+
+Merging (rather than rebasing) keeps the commit history readable and avoids surfacing other branches' changes in this PR's diff.
+
+Then read the full diff:
 
 ```
 gh pr diff
@@ -20,6 +47,7 @@ Review it as you would a stranger's PR. Look for:
 - Logic errors, edge cases, or missing error handling
 - Code that is harder to read than it needs to be
 - Missing or wrong spec/CHANGELOG updates
+- `CHANGELOG.md` has a version number for this PR's work (not just `## WIP`)
 - Anything that would make a reviewer pause or ask a question
 
 **Collect all issues before fixing any.** Do not context-switch into fixing the first problem you find — finish the full review, write down every issue, then fix them all together in Step 2.

@@ -63,11 +63,12 @@ Avoid items that:
    git add <files>
    git commit -m "knock-out-todos: <brief summary of items implemented>"
    git push
-   gh pr create --title "implement: <area or item names>" --body "..."
+   gh pr create --title "🤖 implement: <area or item names>" --body "..."
    ```
-   PR body should include:
-   - List of items implemented with a one-line description each
-   - `closes #N` for each GH-linked item (GitHub closes the issue on merge)
+   Open the PR body with:
+   > 🤖 Claude here, trying to boot some items off of your TODO list! Here's what I knocked out:
+
+   Then list the items implemented and include `closes #N` for any GH-linked items.
 
 9. Follow `.claude/commands/lib/pr-review.md` — self-review the diff, leave explanatory comments, and respond to any Copilot or reviewer comments.
 
