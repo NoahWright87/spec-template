@@ -1,3 +1,10 @@
+<<<<<<<< HEAD:.claude/commands/lib/knock-out-todos.md
+========
+<!-- AUTO-GENERATED — do not edit directly.
+     Source: .claude/commands/lib/knock-out-todos.md
+     Regenerate: run scripts/generate-dist.sh from the repo root. -->
+
+>>>>>>>> origin/main:dist/.claude/commands/lib/knock-out-todos.md
 # Knock Out TODOs
 
 Identify and implement the easiest open TODO items in this repository. The user may specify how many to tackle — default is 5 if not stated.
@@ -53,6 +60,20 @@ Avoid items that:
    ```
 
 7. Run the appropriate build or validation command for the project to confirm changes compile and pass checks.
+
+8. Commit all changes, push, and open a PR:
+   ```
+   git add <files>
+   git commit -m "knock-out-todos: <brief summary of items implemented>"
+   git push
+   gh pr create --title "🤖 implement: <area or item names>" --body "..."
+   ```
+   Open the PR body with:
+   > 🤖 Claude here, trying to boot some items off of your TODO list! Here's what I knocked out:
+
+   Then list the items implemented and include `closes #N` for any GH-linked items.
+
+9. Follow `.claude/commands/lib/pr-review.md` — self-review the diff, leave explanatory comments, and respond to any Copilot or reviewer comments.
 
 ---
 

@@ -23,13 +23,15 @@ The system has two independent layers. A repo can use Layer 1 without ever runni
 ## Commands
 
 - `/what-now`: Thin interactive entrypoint — presents a menu via AskUserQuestion and delegates to the chosen command by reading and following that command file. Lazy-loads only the selected command; no other files enter context. Intended for supervised use; the worker and autonomous agents use `specs/AGENTS.md` directly.
+  - **Status assessment:** reads `specs/.meta.json` for the `"what_now_assess"` key (`"auto"` or `"on_demand"`); prompts and saves preference on first use. In auto mode, runs a pre-flight check before showing the menu and labels options ⭐ Highly recommended / Recommended based on findings. In on-demand mode, adds "🔍 Assess repo status" as a menu option.
+  - `pr-review` (Steps 1–5): Self-review the PR diff → batch-fix all issues in one commit → leave explanatory PR comments on the diff → respond to Copilot/auto-review comments → respond to human review comments. All AI comments start with 🤖.
   - `intake` (Steps 1–8): Ensure INTAKE.md exists → check waiting/snoozed items → pull from GitHub Issues → read `auto_create_issues` config from `specs/.meta.json` (controls whether manual submissions later get auto-filed as GH issues; absent = asks user) → read Submissions → survey TODO spec files → process each item (route/boost/ask) → selectively clear INTAKE.md → report
     - **Auto-create GH issues:** opt-in via `"auto_create_issues": true` in `specs/.meta.json`; if the key is absent, asks the user. When enabled and `gh` is authenticated, creates a GH issue for each unlinked manual submission and labels it `intake:filed`. Off by default.
-  - `refine` (Steps 1–6): Find highest-priority TODO items → re-check waiting items for new GH responses → load GH issue + spec context → assess clarity and estimate effort → write technical detail and estimates → commit and open PR
+  - `refine` (Steps 1–6): Find highest-priority TODO items → re-check waiting items for new GH responses → load GH issue + spec context → assess clarity and estimate effort → write technical detail and estimates → commit and open PR → run pr-review
     - **Effort estimates:** XS / S / M / L / XL / Unknown (with optional `?` uncertainty markers) — added inline as `*(effort: M?)*` on the TODO item
     - **Supervised mode:** iterates with user in chat until sign-off, then commits and opens PR
     - **Headless mode:** posts clarifying questions to GH issues for unresolved product decisions, adds best-effort technical detail, commits and opens PR automatically; picks up GH replies on the next run
-  - `knock-out-todos`: Implement the easiest open TODO items — picks well-understood, low-risk work and executes it
+  - `knock-out-todos` (Steps 1–9): Implement the easiest open TODO items → commit → open PR → run pr-review
   - `spec-backfill`: Generate spec files from an existing codebase
   - `respec`: Install or update the spec system in a target repo
 

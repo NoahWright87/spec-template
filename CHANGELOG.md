@@ -4,6 +4,13 @@ This file lists the current and previous versions, along with the features that 
 
 # Versions
 
+## 0.2.0
+
+- `/what-now` now reads the repo's current state before showing options — it checks for open PRs needing review, stale waiting items, unrefined TODOs, and more, then surfaces the most pressing options first with ⭐ labels. Saves your preference so it only asks once.
+- New `/pr-review` command guides a complete PR review cycle: self-review the diff, leave explanatory comments for reviewers, and respond to any Copilot and human feedback. Auto-triggered after any command that opens a PR.
+- `knock-out-todos` now opens a PR automatically after implementing items and chains into `/pr-review`.
+- Added "Be your own first reviewer" to `PHILOSOPHY.md` — the same expectation we hold engineers to applies to AI.
+
 ## 0.1.0
 
 - Add `/what-now` meta command: thin interactive entrypoint that presents a menu (via AskUserQuestion) and delegates to the chosen command by reading that file on demand — only the selected command enters context; add Commands + Headless mode sections to `scaffold/specs/AGENTS.md` so autonomous agents have the same routing map with a global rule that "ask the user" means posting to GH issues or PRs
