@@ -43,9 +43,10 @@ flowchart LR
 **Step by step:**
 
 1. Drop an idea in `specs/INTAKE.md` (or file a GitHub Issue).
-2. Run `/intake`. It routes each item to the right `spec.todo.md`.
-3. Run `/knock-out-todos`. It picks up the easiest items and implements them.
-4. When work is done, the description moves from `spec.todo.md` to `spec.md`.
+2. Run `/what-now` and choose **File ideas** — it routes each item to the right `spec.todo.md`.
+3. *(Optional)* Run `/what-now` and choose **Add detail** — adds effort estimates and implementation notes before coding starts.
+4. Run `/what-now` and choose **Implement TODO items** — picks up the easiest items and implements them.
+5. When work is done, the description moves from `spec.todo.md` to `spec.md`.
 
 **Practical example:**
 
@@ -100,9 +101,9 @@ flowchart TD
 
 ## Tips
 
-- **Not sure where to start? Run `/what-now`.** It checks your repo's status and points you at the most pressing thing.
-- **Run `/intake` often.** Ideas get stale. File them while they're fresh.
+- **`/what-now` is the only command you run directly.** Everything else lives in `lib/` and is invoked through it.
+- **File ideas often.** Drop things in `specs/INTAKE.md` while they're fresh, then let `/what-now` route them.
 - **`spec.md` = current, `spec.todo.md` = planned.** Keep them honest.
-- **`/knock-out-todos` defaults to 5 items.** Pass a number to change it: `/knock-out-todos 10`.
+- **`/knock-out-todos` defaults to 5 items.** When using `/what-now` → Implement, pass a number to change it: `5`.
 - **GH Issues get labeled.** `intake:filed`, `intake:rejected`, `intake:ignore`. Processed issues are never re-ingested.
-- **Items waiting for more info stay in INTAKE.md.** `/intake` will re-surface them after 7 days. You can snooze them if needed.
+- **Items waiting for more info stay in INTAKE.md.** Intake will re-surface them after 7 days. You can snooze them if needed.

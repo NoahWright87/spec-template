@@ -48,11 +48,11 @@ If you tried SpecKit and it didn't stick, this is different. SpecKit asked every
 
 ## What you get
 
-Four commands that cover the whole loop:
+Commands that cover the whole loop:
 
 | Command | What it does |
 |---------|-------------|
-| `/what-now` | Not sure where to start? Pick this — it assesses your repo and recommends the right next step |
+| `/what-now` | **The only command you need to remember.** Assesses your repo and routes you to the right next step — all other commands are accessed through this one |
 | `/respec` | Install or update the spec system in any repo |
 | `/intake` | Sort ideas and GitHub Issues into the right TODO spec |
 | `/refine` | Add detail and effort estimates to TODO items before implementing |
