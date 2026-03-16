@@ -9,7 +9,7 @@ Your AI writes code. This gives it a memory.
 Paste this into your AI assistant from inside your repo:
 
 ```
-Read the file at `https://github.com/NoahWright87/spec-template/tree/main/.claude/commands/respec.md` and follow its instructions to apply the spec-template system to this repository.
+Read the file at `https://github.com/NoahWright87/spec-template/blob/main/.claude/commands/lib/respec.md` and follow its instructions to apply the spec-template system to this repository.
 ```
 
 The assistant fetches the `/respec` command, checks what already exists, and walks you through setup interactively. Nothing gets touched without your approval.
@@ -48,13 +48,16 @@ If you tried SpecKit and it didn't stick, this is different. SpecKit asked every
 
 ## What you get
 
-Four commands that cover the whole loop:
+Commands that cover the whole loop:
 
 | Command | What it does |
 |---------|-------------|
+| `/what-now` | **The only command you need to remember.** Assesses your repo and routes you to the right next step — all other commands are accessed through this one |
 | `/respec` | Install or update the spec system in any repo |
 | `/intake` | Sort ideas and GitHub Issues into the right TODO spec |
+| `/refine` | Add detail and effort estimates to TODO items before implementing |
 | `/knock-out-todos` | Implement open TODOs and keep specs current |
+| `/pr-review` | Self-review your open PRs and respond to reviewer comments |
 | `/spec-backfill` | Generate specs from an existing codebase |
 
 See [.claude/commands/README.md](.claude/commands/README.md) for the full command guide with flow diagrams.
@@ -66,10 +69,13 @@ See [.claude/commands/README.md](.claude/commands/README.md) for the full comman
 | Path | Purpose |
 |------|---------|
 | `specs/` | Starter spec directory: templates, intake bucket, agent instructions |
-| `.claude/commands/respec.md` | Install or update this template |
-| `.claude/commands/intake.md` | File ideas into the right spec |
-| `.claude/commands/knock-out-todos.md` | Implement open TODOs |
-| `.claude/commands/spec-backfill.md` | Bootstrap specs from existing code |
+| `.claude/commands/what-now.md` | Entry point — assesses repo status and recommends next step |
+| `.claude/commands/lib/respec.md` | Install or update this template |
+| `.claude/commands/lib/intake.md` | File ideas into the right spec |
+| `.claude/commands/lib/refine.md` | Add detail and effort estimates to TODO items |
+| `.claude/commands/lib/knock-out-todos.md` | Implement open TODOs |
+| `.claude/commands/lib/pr-review.md` | Self-review open PRs and respond to comments |
+| `.claude/commands/lib/spec-backfill.md` | Bootstrap specs from existing code |
 | `.github/workflows/spec-check.yml` | PR check: warns when source changes lack spec updates |
 
 ---

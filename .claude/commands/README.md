@@ -6,7 +6,7 @@ A quick guide for humans. Read this before diving into the command files.
 
 ## What is this?
 
-Four commands that make spec-driven development feel automatic.
+Commands that make spec-driven development feel automatic.
 
 The idea: **ideas go in, specs come out, code follows specs.** The commands handle the boring parts — filing ideas, picking up work, keeping docs in sync.
 
@@ -16,9 +16,12 @@ The idea: **ideas go in, specs come out, code follows specs.** The commands hand
 
 | Command | What it does |
 |---------|--------------|
+| `/what-now` | Not sure where to start? Assesses your repo and recommends the right next step |
 | `/respec` | Install or update the spec system in any repo |
 | `/intake` | Sort ideas and GitHub Issues into the right TODO spec |
+| `/refine` | Add detail and effort estimates to TODO items before implementing |
 | `/knock-out-todos` | Implement TODO items from spec files |
+| `/pr-review` | Self-review open PRs and respond to reviewer comments |
 | `/spec-backfill` | Generate specs from an existing codebase |
 
 ---
@@ -31,16 +34,19 @@ flowchart LR
     intake -->|"clear intent"| todo["spec.todo.md"]
     intake -->|"duplicate"| boost["Boosts existing item"]
     intake -->|"unclear"| wait["Posts question\nto GH Issue"]
-    todo --> kot["/knock-out-todos"]
+    todo --> refine["/refine"]
+    refine -->|"adds detail\n& estimates"| todo
+    refine --> kot["/knock-out-todos"]
     kot --> spec["spec.md\n(current state)"]
 ```
 
 **Step by step:**
 
 1. Drop an idea in `specs/INTAKE.md` (or file a GitHub Issue).
-2. Run `/intake`. It routes each item to the right `spec.todo.md`.
-3. Run `/knock-out-todos`. It picks up the easiest items and implements them.
-4. When work is done, the description moves from `spec.todo.md` to `spec.md`.
+2. Run `/what-now` and choose **File ideas** — it routes each item to the right `spec.todo.md`.
+3. *(Optional)* Run `/what-now` and choose **Add detail** — adds effort estimates and implementation notes before coding starts.
+4. Run `/what-now` and choose **Implement TODO items** — picks up the easiest items and implements them.
+5. When work is done, the description moves from `spec.todo.md` to `spec.md`.
 
 **Practical example:**
 
@@ -95,8 +101,9 @@ flowchart TD
 
 ## Tips
 
-- **Run `/intake` often.** Ideas get stale. File them while they're fresh.
+- **`/what-now` is the only command you run directly.** Everything else lives in `lib/` and is invoked through it.
+- **File ideas often.** Drop things in `specs/INTAKE.md` while they're fresh, then let `/what-now` route them.
 - **`spec.md` = current, `spec.todo.md` = planned.** Keep them honest.
-- **`/knock-out-todos` defaults to 5 items.** Pass a number to change it: `/knock-out-todos 10`.
+- **`/knock-out-todos` defaults to 5 items.** When using `/what-now` → Implement, pass a number to change it: `5`.
 - **GH Issues get labeled.** `intake:filed`, `intake:rejected`, `intake:ignore`. Processed issues are never re-ingested.
-- **Items waiting for more info stay in INTAKE.md.** `/intake` will re-surface them after 7 days. You can snooze them if needed.
+- **Items waiting for more info stay in INTAKE.md.** Intake will re-surface them after 7 days. You can snooze them if needed.
