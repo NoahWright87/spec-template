@@ -6,7 +6,7 @@ A quick guide for humans. Read this before diving into the command files.
 
 ## What is this?
 
-Four commands that make spec-driven development feel automatic.
+Commands that make spec-driven development feel automatic.
 
 The idea: **ideas go in, specs come out, code follows specs.** The commands handle the boring parts — filing ideas, picking up work, keeping docs in sync.
 
@@ -16,9 +16,12 @@ The idea: **ideas go in, specs come out, code follows specs.** The commands hand
 
 | Command | What it does |
 |---------|--------------|
+| `/what-now` | Not sure where to start? Assesses your repo and recommends the right next step |
 | `/respec` | Install or update the spec system in any repo |
 | `/intake` | Sort ideas and GitHub Issues into the right TODO spec |
+| `/refine` | Add detail and effort estimates to TODO items before implementing |
 | `/knock-out-todos` | Implement TODO items from spec files |
+| `/pr-review` | Self-review open PRs and respond to reviewer comments |
 | `/spec-backfill` | Generate specs from an existing codebase |
 
 ---
@@ -31,7 +34,9 @@ flowchart LR
     intake -->|"clear intent"| todo["spec.todo.md"]
     intake -->|"duplicate"| boost["Boosts existing item"]
     intake -->|"unclear"| wait["Posts question\nto GH Issue"]
-    todo --> kot["/knock-out-todos"]
+    todo --> refine["/refine"]
+    refine -->|"adds detail\n& estimates"| todo
+    refine --> kot["/knock-out-todos"]
     kot --> spec["spec.md\n(current state)"]
 ```
 
@@ -95,6 +100,7 @@ flowchart TD
 
 ## Tips
 
+- **Not sure where to start? Run `/what-now`.** It checks your repo's status and points you at the most pressing thing.
 - **Run `/intake` often.** Ideas get stale. File them while they're fresh.
 - **`spec.md` = current, `spec.todo.md` = planned.** Keep them honest.
 - **`/knock-out-todos` defaults to 5 items.** Pass a number to change it: `/knock-out-todos 10`.
