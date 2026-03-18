@@ -1,0 +1,58 @@
+---
+# Base CronJob template for spec-template worker.
+# Repo-specific config (TARGET_REPO, TARGET_BRANCH, MODEL) is injected
+# by per-repo Kustomize overlays — do not add them here.
+#
+# Prerequisites:
+# - Secret 'spec-worker-secrets' must exist with keys:
+#     anthropic-api-key  — Anthropic API key
+#     github-token       — GitHub PAT with repo read/write + issues + PRs
+# - Worker image must be available in GHCR
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: spec-template-worker
+spec:
+  schedule: "0 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  startingDeadlineSeconds: 3600
+
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 604800
+
+      template:
+        metadata:
+          labels:
+            app: spec-template-worker
+        spec:
+          restartPolicy: OnFailure
+
+          containers:
+            - name: spec-template-worker
+              image: ghcr.io/noahwright87/spec-template-worker
+              imagePullPolicy: IfNotPresent
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              env:
+                - name: ANTHROPIC_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: spec-worker-secrets
+                      key: anthropic-api-key
+                - name: GITHUB_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: spec-worker-secrets
+                      key: github-token
+                # Optional: custom API endpoint
+                # - name: ANTHROPIC_BASE_URL
+                #   value: "https://your-proxy.example.com"

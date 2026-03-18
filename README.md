@@ -92,7 +92,9 @@ The scaffold works on demand — you ask your AI, it helps. That's the simple pa
 
 If you want fully **autonomous operation** — Claude continuously working on its own — this repo also provides a worker container. It runs as a cron job: wakes up, clones your repo, runs intake and TODO processing, and exits. No human in the loop required.
 
-See [`worker/README.md`](worker/README.md) for setup and deployment instructions (Docker Desktop and Kubernetes).
+The worker supports a multi-agent architecture — each agent (intake, knock-out-todos) gets its own branch and PR, controlled by a `worker-config.yaml` in the target repo. Deploy with Docker Compose for local use or Kubernetes CronJobs for production.
+
+See [`worker/README.md`](worker/README.md) for setup and deployment instructions, or [`k8s/README.md`](k8s/README.md) for Kubernetes-specific guidance.
 
 ---
 

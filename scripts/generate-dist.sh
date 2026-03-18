@@ -76,6 +76,12 @@ copy_with_header \
   "$REPO_ROOT/.github/workflows/spec-check.yml" \
   "$DIST_DIR/.github/workflows/spec-check.yml"
 
+# ── Worker config ────────────────────────────────────────────────────────────
+echo "Copying worker config..."
+copy_with_header \
+  "$REPO_ROOT/scaffold/worker-config.yaml" \
+  "$DIST_DIR/.claude/worker-config.yaml"
+
 echo ""
 echo "dist/ generated successfully."
 echo "Review changes, then commit dist/ to the repo."

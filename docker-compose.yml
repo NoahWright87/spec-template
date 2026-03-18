@@ -1,0 +1,30 @@
+version: '3.8'
+
+# NOTE: Docker Compose runs the worker once and exits (one-shot execution).
+# To run on a schedule, use one of these approaches:
+#
+# Option 1 - Host cron (recommended for local testing):
+#   Add to crontab (crontab -e):
+#     0 */6 * * * cd /path/to/spec-template && docker-compose up
+#     # Runs every 6 hours
+#
+# Option 2 - Kubernetes CronJob (recommended for production):
+#   See k8s/README.md for full Kubernetes deployment with kustomize
+#
+# Option 3 - Systemd timer (Linux servers):
+#   Create a systemd timer unit that runs `docker-compose up`
+
+services:
+  worker:
+    platform: linux/amd64
+    image: ghcr.io/noahwright87/spec-template-worker:latest
+    env_file:
+      - .env  # Automatically loads from .env file (git-ignored)
+    volumes:
+      - spec-worker-state:/worker/state
+      # Optional: uncomment for subscription mode
+      # - ~/.claude:/home/worker/.claude:ro
+
+volumes:
+  spec-worker-state:
+    name: spec-worker-state

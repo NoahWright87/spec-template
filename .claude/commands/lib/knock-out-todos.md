@@ -1,10 +1,3 @@
-<<<<<<<< HEAD:.claude/commands/lib/knock-out-todos.md
-========
-<!-- AUTO-GENERATED — do not edit directly.
-     Source: .claude/commands/lib/knock-out-todos.md
-     Regenerate: run scripts/generate-dist.sh from the repo root. -->
-
->>>>>>>> origin/main:dist/.claude/commands/lib/knock-out-todos.md
 # Knock Out TODOs
 
 Identify and implement the easiest open TODO items in this repository. The user may specify how many to tackle — default is 5 if not stated.
