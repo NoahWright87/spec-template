@@ -7,16 +7,11 @@ RUN apk add --no-cache \
     jq \
     rsync \
     bash \
+    python3 \
     github-cli
 
 # ── Claude Code CLI ────────────────────────────────────────────────────────────
 RUN npm install -g @anthropic-ai/claude-code@2.1.71
-
-# ── yq (YAML parser for worker-config.yaml) ──────────────────────────────────
-ARG YQ_VERSION=v4.44.1
-RUN ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') && \
-    curl -fsSL "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${ARCH}" \
-    -o /usr/local/bin/yq && chmod +x /usr/local/bin/yq
 
 # ── Worker runtime files ───────────────────────────────────────────────────────
 WORKDIR /worker
@@ -54,7 +49,9 @@ USER worker
 # Optional params   — TARGET_BRANCH (default: main)
 #                     CLAUDE_CONFIG_PATH (default: .claude — relative to repo root)
 #                     ANTHROPIC_BASE_URL (custom API endpoint for enterprise/proxy/gateway deployments)
-#                     MODEL (Claude model to use, e.g. claude-sonnet-4-5, claude-haiku-4-5)
+#                     MODEL (Claude model to use, e.g. claude-sonnet-4-6, claude-haiku-4-5)
 #                        Defaults to Claude CLI's default if not specified
+#                        When using subscription mode (mounted ~/.claude), MODEL is accepted
+#                        but model validation is skipped (no API key to validate against)
 
 ENTRYPOINT ["/worker/entrypoint.sh"]

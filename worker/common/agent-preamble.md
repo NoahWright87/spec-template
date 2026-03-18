@@ -6,11 +6,14 @@ You are an autonomous spec-driven worker. The repository you are operating on us
 
 Create or check out your working branch. The entrypoint exports `AGENT_BRANCH` with the correct branch name (e.g., `worker/intake/2025-03-10`). When responding to an existing PR, this is the PR's branch; for new work, it's today's date.
 
-```
-git checkout "$AGENT_BRANCH" 2>/dev/null || git checkout -b "$AGENT_BRANCH"
+```bash
+git fetch origin
+git checkout "$AGENT_BRANCH" 2>/dev/null \
+  || git checkout --track "origin/$AGENT_BRANCH" 2>/dev/null \
+  || git checkout -b "$AGENT_BRANCH"
 ```
 
-The `|| git checkout -b` creates the branch if it doesn't exist yet. If the branch already exists (from a previous run or an existing PR), it checks it out and continues adding commits.
+The fetch ensures remote branches are visible. The fallback order: check out an existing local branch → track the remote branch if it exists → create a new branch from HEAD. This correctly handles fresh clones where the PR branch exists only on the remote.
 
 ## Step 0 — Review your open PR (CRITICAL - DO THIS FIRST)
 
@@ -27,10 +30,10 @@ echo "PR #$WORKER_PR_NUMBER mergeable: $MERGEABLE"
 
 If `MERGEABLE` is `false`:
 1. Make sure you are on your agent branch (`$AGENT_BRANCH`)
-2. Merge `main` into your branch — do NOT rebase (rebase rewrites history and confuses reviewers):
+2. Merge the target branch into your branch — do NOT rebase (rebase rewrites history and confuses reviewers):
    ```bash
-   git fetch origin main
-   git merge origin/main --no-edit
+   git fetch origin
+   git merge "origin/${TARGET_BRANCH:-main}" --no-edit
    ```
 3. Resolve any conflicts. Keep your changes where they are correct; accept upstream changes where main has moved on. The goal is a clean merge commit — no extra unrelated changes should appear in the PR diff.
 4. Commit and push immediately so the PR is unblocked for reviewers.
@@ -55,7 +58,7 @@ If `WORKER_PR_NUMBER` is set:
 2. **Read ALL review comments (inline code comments on Files Changed tab):**
    ```bash
    gh api "repos/$REPO/pulls/$WORKER_PR_NUMBER/comments" \
-     --jq '.[] | select(.user.type == "User" and (.body | test("^[[:space:]]*🤖") | not) and (.line != null or .position != null)) |
+     --jq '.[] | select(.user.type == "User" and (.body | test("^[[:space:]]*🤖") | not) and (.line != null)) |
      "ID: \(.id)\nUser: @\(.user.login)\nFile: \(.path)\nComment: \(.body)\n---"'
    ```
 

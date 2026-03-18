@@ -1,17 +1,18 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Example overlay: targets a specific repository.
-# Copy this directory for each repo you want the worker to operate on.
+# Overlay for the spec-template repo itself.
+# This is both the canonical example and the live deployment for this repo.
+# Copy this directory for each additional repo you want the worker to operate on.
 #
 # Usage:
-#   kubectl apply -k k8s/overlays/example/
+#   kubectl apply -k k8s/overlays/spec-template/
 
 resources:
   - ../../base
 
 # nameSuffix distinguishes this CronJob from others in the same namespace
-nameSuffix: -my-repo
+nameSuffix: -spec-template
 
 patches:
   - target:
@@ -25,7 +26,7 @@ patches:
         path: /spec/jobTemplate/spec/template/spec/containers/0/env/-
         value:
           name: TARGET_REPO
-          value: "your-org/your-repo"
+          value: "NoahWright87/spec-template"
       - op: add
         path: /spec/jobTemplate/spec/template/spec/containers/0/env/-
         value:
@@ -35,4 +36,4 @@ patches:
         path: /spec/jobTemplate/spec/template/spec/containers/0/env/-
         value:
           name: MODEL
-          value: "claude-sonnet-4-5"
+          value: "claude-sonnet-4-6"

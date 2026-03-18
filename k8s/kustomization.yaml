@@ -4,7 +4,7 @@ kind: Kustomization
 # Each overlay produces a CronJob for one target repo.
 # To add a repo: copy overlays/example/ to overlays/{repo-name}/, then add it here.
 resources:
-  - overlays/example
+  - overlays/spec-template
 
 # Image tag management — update when publishing new worker versions
 images:

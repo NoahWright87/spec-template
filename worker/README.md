@@ -179,7 +179,9 @@ The `MODEL` parameter lets you choose which Claude model the worker uses. This i
 -e MODEL=claude-opus-4-6
 ```
 
-**Model validation:** When using API key mode, the worker validates model access before starting work. If your API key doesn't have access to the specified model, it fails quickly with a clear error message.
+**Model validation:** When using API key mode, the worker validates model access before starting work. If the model ID is wrong or your key doesn't have access, it fails immediately with a clear error message (any non-200 response is treated as a fatal preflight failure).
+
+**Subscription mode + MODEL:** You can set `MODEL` in subscription mode too — the worker will pass `--model` to the Claude CLI. Model validation is skipped (there's no API key to validate against), but the CLI will use the specified model for the run. If the model ID is invalid, the Claude CLI will report an error when it starts.
 
 ---
 

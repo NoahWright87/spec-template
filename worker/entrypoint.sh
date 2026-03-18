@@ -13,9 +13,6 @@
 #   → for each declared agent: check per-agent PR state, run Claude CLI
 #   → each agent gets its own branch (worker/{name}/YYYY-MM-DD) and PR
 #
-# Legacy mode: if the repo provides .claude/worker-instructions.md, the entrypoint
-# falls back to the old single-invocation mode (one branch, one PR).
-#
 # State that should survive between runs (logs) lives in /worker/state (volume).
 
 set -euo pipefail
@@ -135,21 +132,22 @@ if [ -n "$MODEL" ] && [ -n "${ANTHROPIC_API_KEY:-}" ]; then
     _response=$(echo "$_model_test" | sed '$d')
     set -e
 
-    if [ "$_http_code" = "401" ]; then
-        echo "[worker] PREFLIGHT FAIL: Model '$MODEL' is not accessible with this API key."
+    if [ "$_http_code" = "200" ]; then
+        echo "[worker] ✓ Model '$MODEL' is accessible"
+    else
+        echo "[worker] PREFLIGHT FAIL: Model validation returned HTTP $_http_code for model '$MODEL'."
         echo "[worker]"
         echo "[worker] API response:"
         echo "$_response" | jq -r '.' 2>/dev/null || echo "$_response" | sed 's/^/[worker]   /'
         echo "[worker]"
         echo "[worker] Troubleshooting:"
-        echo "[worker]   • Verify MODEL='$MODEL' is correct"
-        echo "[worker]   • Check if your API key has access to this model"
+        case "$_http_code" in
+            401) echo "[worker]   • API key is invalid or expired — verify ANTHROPIC_API_KEY" ;;
+            404) echo "[worker]   • Model '$MODEL' not found — check the model ID (e.g. claude-sonnet-4-6)" ;;
+            429) echo "[worker]   • Rate limited — try again later or use a different model" ;;
+        esac
         echo "[worker]   • Try omitting MODEL to use the default model"
         exit 1
-    elif [ "$_http_code" != "200" ]; then
-        echo "[worker] WARNING: Model validation returned HTTP $_http_code (proceeding anyway)"
-    else
-        echo "[worker] ✓ Model '$MODEL' is accessible"
     fi
 elif [ -n "$MODEL" ]; then
     echo "[worker] ⚠ MODEL specified but skipping validation (subscription mode)"
@@ -336,9 +334,6 @@ fi
 # ══ Operate mode ═══════════════════════════════════════════════════════════════
 # Multi-agent architecture: reads .claude/worker-config.yaml from the target repo
 # to determine which agents to run. Each agent gets its own branch, PR, and Claude session.
-#
-# Backward compatibility: if the repo provides .claude/worker-instructions.md, the
-# entrypoint falls back to the legacy single-invocation mode (one branch, one PR).
 
 cd "$WORKSPACE"
 
@@ -348,9 +343,19 @@ AGENT_DIR="/worker/agents"
 
 if [ -f "$WORKER_CONFIG" ]; then
     echo "[worker] Reading worker config: $WORKER_CONFIG"
-    MAX_OPEN_PRS=$(yq '.max_open_prs // 1' "$WORKER_CONFIG")
-    # Read agents as newline-separated list
-    AGENTS=$(yq '.agents[]' "$WORKER_CONFIG" 2>/dev/null || echo "")
+    MAX_OPEN_PRS=$(python3 -c "
+import sys, re
+text = open('$WORKER_CONFIG').read()
+m = re.search(r'^max_open_prs:\s*(\d+)', text, re.MULTILINE)
+print(m.group(1) if m else '1')
+")
+    # Read agents as newline-separated list (lines under 'agents:' that start with '  - ')
+    AGENTS=$(python3 -c "
+import sys, re
+text = open('$WORKER_CONFIG').read()
+agents = re.findall(r'^\s+-\s+(\S+)', text[text.find('agents:'):], re.MULTILINE) if 'agents:' in text else []
+print('\n'.join(agents))
+" 2>/dev/null || echo "")
 else
     echo "[worker] No worker-config.yaml found — using defaults."
     MAX_OPEN_PRS=1
@@ -462,12 +467,15 @@ _all_worker_prs=$(gh pr list \
     --json number,headRefName \
     --jq '.[] | select(.headRefName | startswith("worker/")) | "\(.headRefName) \(.number)"' \
     2>/dev/null || true)
-_open_pr_count=$(printf '%s' "$_all_worker_prs" | grep -c . 2>/dev/null || true)
+_open_pr_count=0
+if [ -n "$_all_worker_prs" ]; then
+    _open_pr_count=$(printf '%s\n' "$_all_worker_prs" | grep -c .)
+fi
 echo "[worker] Open worker PRs: $_open_pr_count / $MAX_OPEN_PRS"
 
 # ── Human comment detection helpers ──────────────────────────────────────────
 _human_filter='[.[] | select(.user.type == "User" and (.body | test("^[[:space:]]*🤖") | not))] | length'
-_human_filter_reviews='[.[] | select(.user.type == "User" and (.body | test("^[[:space:]]*🤖") | not) and (.line != null or .position != null))] | length'
+_human_filter_reviews='[.[] | select(.user.type == "User" and (.body | test("^[[:space:]]*🤖") | not) and (.line != null))] | length'
 
 # ── Helper: check if a PR has human comments ─────────────────────────────────
 # Usage: has_human_comments PR_NUMBER → sets _has_comments=1 if found
@@ -611,9 +619,18 @@ for _agent in $AGENTS; do
         _agent_results="${_agent_results}  $_agent: FAILED (exit $_agent_exit)\n"
     else
         _any_agent_ran=1
-        # If this agent created a new PR, increment the count for subsequent agents
+        # If this was a new-PR run, check whether the agent actually opened one
+        # (it may have run but found nothing to do). Only increment if the PR exists now.
         if [ "$_is_new_pr" -eq 1 ]; then
-            _open_pr_count=$(( _open_pr_count + 1 ))
+            _new_pr_check=$(gh pr list \
+                --repo "$TARGET_REPO" \
+                --state open \
+                --json number,headRefName \
+                --jq ".[] | select(.headRefName == \"$_agent_branch\") | .number" \
+                2>/dev/null || true)
+            if [ -n "$_new_pr_check" ]; then
+                _open_pr_count=$(( _open_pr_count + 1 ))
+            fi
         fi
         _agent_results="${_agent_results}  $_agent: OK\n"
     fi

@@ -53,6 +53,10 @@ spec:
                     secretKeyRef:
                       name: spec-worker-secrets
                       key: github-token
-                # Optional: custom API endpoint
+                # Optional: custom API endpoint (enterprise proxy / gateway)
                 # - name: ANTHROPIC_BASE_URL
                 #   value: "https://your-proxy.example.com"
+                #
+                # Subscription mode (alternative to ANTHROPIC_API_KEY):
+                # Remove the ANTHROPIC_API_KEY env above and add a volumeMount + volume below.
+                # See k8s/README.md — "Subscription mode / Docker Desktop" for full instructions.
