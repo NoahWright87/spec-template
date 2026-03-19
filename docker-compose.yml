@@ -1,4 +1,3 @@
-version: '3.8'
 
 # NOTE: Docker Compose runs the worker once and exits (one-shot execution).
 # To run on a schedule, use one of these approaches:

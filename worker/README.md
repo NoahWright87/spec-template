@@ -169,8 +169,8 @@ The `MODEL` parameter lets you choose which Claude model the worker uses. This i
 
 **Examples:**
 ```bash
-# Use Sonnet 4.5 (good balance of speed and capability)
--e MODEL=claude-sonnet-4-5
+# Use Sonnet 4.6 (good balance of speed and capability)
+-e MODEL=claude-sonnet-4-6
 
 # Use Haiku for cost-efficient processing
 -e MODEL=claude-haiku-4-5

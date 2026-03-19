@@ -4,6 +4,16 @@ This file lists the current and previous versions, along with the features that 
 
 # Versions
 
+## 0.3.0
+
+- **Multi-agent worker architecture**: the worker now runs independent agents (`intake`, `knock-out-todos`) as separate Claude CLI sessions, each with its own branch and PR. Controlled by `.claude/worker-config.yaml` in the target repo (`max_open_prs`, `agents` list).
+- **`MODEL` environment variable**: choose which Claude model the worker uses (`claude-sonnet-4-6`, `claude-haiku-4-5`, etc.). Model access is validated at preflight (API key mode); any non-200 response is a hard failure with targeted troubleshooting hints. Subscription mode passes `--model` to the CLI without validation.
+- **Docker Compose + `.env.example`**: `docker-compose.yml` (published image) and `docker-compose.local.yml` (local build) for one-command local runs. `.env.example` provided as a setup template.
+- **`run-worker.sh` helper**: shell script that loads `.env`, auto-detects auth mode (API key vs subscription credentials file), and builds the `docker run` command.
+- **Kubernetes deployment (Kustomize)**: `k8s/` directory with base CronJob template and per-repo overlays. Includes Docker Desktop quickstart, subscription mode `hostPath` mount docs, and horizontal scaling guidance.
+- **Dockerfile**: switched from `node:20-slim` + manual `gh` install to `node:20-alpine` + `apk`. Replaced `yq` with `python3` for YAML parsing (no external binary download at build time).
+- **Fixes**: `_open_pr_count` initializes to `0`; only increments after verifying agent opened a PR. Agent preamble fetches before checkout; uses `TARGET_BRANCH` for merge-to-resolve-conflicts.
+
 ## 0.2.0
 
 - `/what-now` now reads the repo's current state before showing options — it checks for open PRs needing review, stale waiting items, unrefined TODOs, and more, then surfaces the most pressing options first with ⭐ labels. Saves your preference so it only asks once.

@@ -1,4 +1,3 @@
-version: '3.8'
 
 # Local development compose file that builds the worker image locally
 # instead of pulling from GHCR.

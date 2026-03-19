@@ -228,7 +228,7 @@ kubectl create job --from=cronjob/spec-template-worker-my-repo manual-test-$(dat
 ### Worker not running
 
 - Verify the CronJob exists: `kubectl get cronjobs`
-- Check schedule: the `example` overlay defaults to every 6 hours (`0 */6 * * *`)
+- Check schedule: the `spec-template` overlay defaults to every 6 hours (`0 */6 * * *`)
 - Look for failed Jobs: `kubectl get jobs | grep -i fail`
 
 ### Job failing

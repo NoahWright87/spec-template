@@ -13,14 +13,21 @@ After completing all assigned steps:
 3. **If work WAS done:**
    - Push your branch: `git push origin "$AGENT_BRANCH"`
    - Check whether a PR already exists for this branch:
-     ```
+     ```bash
      EXISTING_PR=$(gh pr list --head "$AGENT_BRANCH" --state open --json number --jq '.[0].number')
      ```
      - If a PR exists (`EXISTING_PR` is non-empty): your new commits are already part of the PR
-     - If no PR exists: Create one targeting the default branch
+     - If no PR exists: Create one targeting the default branch and capture the number:
+       ```bash
+       PR_URL=$(gh pr create \
+         --title "🤖 Claude ($AGENT_NAME): [brief title]" \
+         --body "🤖 Claude ($AGENT_NAME): [description of work done]" \
+         --base "${TARGET_BRANCH:-main}")
+       EXISTING_PR=$(echo "$PR_URL" | grep -oE '[0-9]+$')
+       ```
    - **Post a summary comment to the PR:**
      ```bash
-     gh pr comment ${EXISTING_PR:-$NEW_PR_NUMBER} --body "🤖 Claude ($AGENT_NAME): [summary of work done]"
+     gh pr comment "$EXISTING_PR" --body "🤖 Claude ($AGENT_NAME): [summary of work done]"
      ```
 
 4. **Output a brief summary to console (always):**
