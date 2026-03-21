@@ -21,11 +21,62 @@ The worker automatically decides what to do based on whether the target repo alr
 
 1. Clones or updates the target repository.
 2. Finds `specs/AGENTS.md` — scaffold confirmed.
-3. Reads and executes the **intake** command — routes open GitHub issues to the correct spec files.
-4. Reads and executes the **knock-out-todos** command — implements the easiest open TODOs.
-5. Commits and opens PRs for completed work.
-6. Posts questions to GitHub issues for anything that needs human input.
+3. Reads `.claude/worker-config.yaml` for the list of agents and resource limits.
+4. Checks global activity signals (unprocessed issues, human comments on filed issues).
+5. For each agent: checks per-agent PR state, runs Claude CLI with agent-specific instructions.
+6. Each agent gets its own branch (`worker/{name}/YYYY-MM-DD`) and PR.
 7. Exits. The next cron run picks up where it left off.
+
+---
+
+## Multi-agent architecture
+
+The worker reads `.claude/worker-config.yaml` from the target repo to determine which agents to run:
+
+```yaml
+max_open_prs: 1
+agents:
+  - intake
+  - knock-out-todos
+```
+
+- **`max_open_prs`** — limits how many open worker PRs can exist at once. Keeps the review queue manageable.
+- **`agents`** — list of agent names. Each must have a matching instruction file in the worker image (`worker/agents/{name}.md`).
+
+Each agent gets its own branch and PR:
+- `worker/intake/2025-03-10` — intake agent's branch for March 10
+- `worker/knock-out-todos/2025-03-10` — knock-out-todos agent's branch
+
+Agents run independently: the intake agent routes issues while the knock-out-todos agent implements TODOs. Human comments on an agent's PR trigger that specific agent to respond on its next run.
+
+---
+
+## Quick start with Docker Compose
+
+### Using the published image
+
+```bash
+cp .env.example .env
+# Edit .env with your GITHUB_TOKEN, ANTHROPIC_API_KEY, and TARGET_REPO
+docker compose up
+```
+
+### Building locally
+
+```bash
+cp .env.example .env
+# Edit .env with your values
+docker compose -f docker-compose.local.yml up --build
+```
+
+### Using the helper script
+
+```bash
+cp .env.example .env
+# Edit .env with your values
+./run-worker.sh            # Pull and run published image
+./run-worker.sh --build    # Build locally first, then run
+```
 
 ---
 
@@ -71,6 +122,18 @@ docker run --rm \
   ghcr.io/noahwright87/spec-template-worker:latest
 ```
 
+To use a custom API endpoint (enterprise proxy or gateway), add `ANTHROPIC_BASE_URL`:
+
+```bash
+docker run --rm \
+  -e ANTHROPIC_API_KEY="sk-..." \
+  -e ANTHROPIC_BASE_URL="https://your-proxy.example.com" \
+  -e GITHUB_TOKEN="your-github-token" \
+  -e TARGET_REPO="owner/your-repo" \
+  -v spec-worker-state:/worker/state \
+  ghcr.io/noahwright87/spec-template-worker:latest
+```
+
 ---
 
 ## Required secrets
@@ -91,7 +154,36 @@ Never bake these into the image.
 | `TARGET_REPO` | Yes | — | Target repository in `owner/repo` format |
 | `TARGET_BRANCH` | No | `main` | Branch to clone and work against |
 | `CLAUDE_CONFIG_PATH` | No | `.claude` | Path to config dir in the target repo (relative to repo root) |
-| `MAX_TODOS` | No | `1` | Maximum number of TODO items to implement per fresh run. Keep low while the worker is new to ensure PRs stay small and reviewable. Increase as confidence grows. |
+| `ANTHROPIC_BASE_URL` | No | — | Custom API endpoint for enterprise proxy/gateway deployments |
+| `MODEL` | No | CLI default | Claude model to use (e.g., `claude-sonnet-4-5`, `claude-haiku-4-5`) |
+
+---
+
+## Model selection
+
+The `MODEL` parameter lets you choose which Claude model the worker uses. This is especially useful for:
+
+- **Cost optimization** — use Haiku for simple intake/routing tasks
+- **Quality control** — use Opus for complex implementation work
+- **Enterprise gateways** that only have certain models available
+
+**Examples:**
+```bash
+# Use Sonnet 4.6 (good balance of speed and capability)
+-e MODEL=claude-sonnet-4-6
+
+# Use Haiku for cost-efficient processing
+-e MODEL=claude-haiku-4-5
+
+# Use Opus for complex tasks
+-e MODEL=claude-opus-4-6
+```
+
+**Model validation:** When using API key mode, the worker validates model access before starting work. If the model ID is wrong or your key doesn't have access, it fails immediately with a clear error message (any non-200 response is treated as a fatal preflight failure).
+
+**Subscription mode + MODEL:** You can set `MODEL` in subscription mode too — the worker will pass `--model` to the Claude CLI. Model validation is skipped (there's no API key to validate against), but the CLI will use the specified model for the run. If the model ID is invalid, the Claude CLI will report an error when it starts.
+
+---
 
 ## Adopting a repo via the worker
 
@@ -106,106 +198,13 @@ The easiest way to bootstrap a new repo:
 
 ---
 
-## Running locally in Docker Desktop
-
-### 1. Pull the image
-
-```bash
-docker pull ghcr.io/noahwright87/spec-template-worker:latest
-```
-
-### 2. Create a state volume (once)
-
-```bash
-docker volume create spec-worker-state
-```
-
-### 3. Run a single iteration
-
-**With Claude Code subscription (Option A):**
-
-```bash
-docker run --rm \
-  -v ~/.claude:/home/worker/.claude:ro \
-  -e GITHUB_TOKEN="your-github-token" \
-  -e TARGET_REPO="owner/your-repo" \
-  -v spec-worker-state:/worker/state \
-  ghcr.io/noahwright87/spec-template-worker:latest
-```
-
-**With API key (Option B):**
-
-```bash
-docker run --rm \
-  -e ANTHROPIC_API_KEY="sk-ant-..." \
-  -e GITHUB_TOKEN="your-github-token" \
-  -e TARGET_REPO="owner/your-repo" \
-  -v spec-worker-state:/worker/state \
-  ghcr.io/noahwright87/spec-template-worker:latest
-```
-
-### 4. Schedule recurring runs (Docker Desktop)
-
-Use a local cron job that calls `docker run` (Option A shown — adjust for Option B as needed):
-
-```cron
-# Run the worker every day at 3 AM
-0 3 * * * docker run --rm -v ~/.claude:/home/worker/.claude:ro -e GITHUB_TOKEN="..." -e TARGET_REPO="owner/repo" -v spec-worker-state:/worker/state ghcr.io/noahwright87/spec-template-worker:latest
-```
-
----
-
 ## Deploying in Kubernetes
 
-The worker runs as a [`CronJob`](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) in Kubernetes. In a CI/CD or shared environment, Option B (API key) is the natural fit — store it as a Secret.
+The worker runs as a [`CronJob`](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) in Kubernetes. See [`k8s/README.md`](../k8s/README.md) for full kustomize-based deployment instructions, including:
 
-```yaml
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: spec-worker-my-repo
-spec:
-  schedule: "0 3 * * *"        # daily at 3 AM UTC
-  concurrencyPolicy: Forbid    # prevent overlapping runs
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          restartPolicy: Never
-          containers:
-            - name: worker
-              image: ghcr.io/noahwright87/spec-template-worker:latest
-              env:
-                - name: TARGET_REPO
-                  value: "owner/your-repo"
-                - name: TARGET_BRANCH
-                  value: main
-                - name: ANTHROPIC_API_KEY
-                  valueFrom:
-                    secretKeyRef:
-                      name: spec-worker-secrets
-                      key: anthropic-api-key
-                - name: GITHUB_TOKEN
-                  valueFrom:
-                    secretKeyRef:
-                      name: spec-worker-secrets
-                      key: github-token
-              volumeMounts:
-                - name: worker-state
-                  mountPath: /worker/state
-          volumes:
-            - name: worker-state
-              persistentVolumeClaim:
-                claimName: spec-worker-state-my-repo
-```
-
-Scale horizontally by running one `CronJob` per target repo, each with its own `TARGET_REPO` parameter and state volume.
-
----
-
-## Per-repo customization
-
-The worker checks for `.claude/worker-instructions.md` in the target repo before falling back to the image's built-in instructions. Drop a `worker-instructions.md` into the target repo's `.claude/` directory to override default behavior.
+- Base CronJob template with Secret-based credentials
+- Per-repo overlays with schedule and model configuration
+- Horizontal scaling (one CronJob per target repo)
 
 ---
 

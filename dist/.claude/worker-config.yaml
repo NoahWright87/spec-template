@@ -1,0 +1,11 @@
+# AUTO-GENERATED — do not edit directly.
+# Source: scaffold/worker-config.yaml
+# Regenerate: run scripts/generate-dist.sh from the repo root.
+
+# Worker agent configuration
+# Controls which agents run and resource limits.
+# See: https://github.com/NoahWright87/spec-template
+max_open_prs: 1
+agents:
+  - intake
+  - knock-out-todos

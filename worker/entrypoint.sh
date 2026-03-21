@@ -8,7 +8,10 @@
 #   → copy dist/ payload, create branch, open bootstrap PR, exit
 #
 # Operate mode: scaffold found in target repo
-#   → run intake + knock-out-todos via Claude CLI non-interactively
+#   → read .claude/worker-config.yaml for agent list + limits
+#   → check global activity signals (issues, comments)
+#   → for each declared agent: check per-agent PR state, run Claude CLI
+#   → each agent gets its own branch (worker/{name}/YYYY-MM-DD) and PR
 #
 # State that should survive between runs (logs) lives in /worker/state (volume).
 
@@ -21,9 +24,9 @@ set -euo pipefail
 # ── Optional parameters with defaults ─────────────────────────────────────────
 TARGET_BRANCH="${TARGET_BRANCH:-main}"
 CLAUDE_CONFIG_PATH="${CLAUDE_CONFIG_PATH:-.claude}"
-# WHY default 1: keeps each PR small and focused so humans can review and merge
-# quickly. Increase as confidence in the worker grows.
-MAX_TODOS="${MAX_TODOS:-1}"
+# MODEL: Claude model to use (e.g., claude-opus-4-6, claude-sonnet-4-5, claude-haiku-4-5)
+# If not set, Claude CLI will use its default model selection
+MODEL="${MODEL:-}"
 
 # ── Auth mode detection ────────────────────────────────────────────────────────
 # Two supported modes:
@@ -116,14 +119,59 @@ fi
 # caught immediately without spending API tokens on work that can't be committed.
 echo "[worker] Running pre-flight checks..."
 
+# 0. Claude API: validate model access (if MODEL is specified)
+if [ -n "$MODEL" ] && [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+    echo "[worker] Validating model access: $MODEL"
+    set +e
+    _model_test=$(curl -s -w "\n%{http_code}" -X POST "${ANTHROPIC_BASE_URL:-https://api.anthropic.com}/v1/messages" \
+        -H "x-api-key: $ANTHROPIC_API_KEY" \
+        -H "anthropic-version: 2023-06-01" \
+        -H "content-type: application/json" \
+        -d "{\"model\":\"$MODEL\",\"max_tokens\":1,\"messages\":[{\"role\":\"user\",\"content\":\"test\"}]}" 2>&1)
+    _http_code=$(echo "$_model_test" | tail -1)
+    _response=$(echo "$_model_test" | sed '$d')
+    set -e
+
+    if [ "$_http_code" = "200" ]; then
+        echo "[worker] ✓ Model '$MODEL' is accessible"
+    else
+        echo "[worker] PREFLIGHT FAIL: Model validation returned HTTP $_http_code for model '$MODEL'."
+        echo "[worker]"
+        echo "[worker] API response:"
+        echo "$_response" | jq -r '.' 2>/dev/null || echo "$_response" | sed 's/^/[worker]   /'
+        echo "[worker]"
+        echo "[worker] Troubleshooting:"
+        case "$_http_code" in
+            401) echo "[worker]   • API key is invalid or expired — verify ANTHROPIC_API_KEY" ;;
+            404) echo "[worker]   • Model '$MODEL' not found — check the model ID (e.g. claude-sonnet-4-6)" ;;
+            429) echo "[worker]   • Rate limited — try again later or use a different model" ;;
+        esac
+        echo "[worker]   • Try omitting MODEL to use the default model"
+        exit 1
+    fi
+elif [ -n "$MODEL" ]; then
+    echo "[worker] ⚠ MODEL specified but skipping validation (subscription mode)"
+fi
+
 # 1. GitHub token: repo access + push permission (one API call, jq is installed)
-_push=$(gh api "repos/$TARGET_REPO" --jq '.permissions.push // "unknown"' 2>&1) || {
+set +e  # Temporarily disable errexit so we can capture the error
+_gh_response=$(gh api "repos/$TARGET_REPO" --jq '.permissions.push // "unknown"' 2>&1)
+_gh_exit_code=$?
+set -e  # Re-enable errexit
+if [ $_gh_exit_code -ne 0 ]; then
     echo "[worker] PREFLIGHT FAIL: Cannot access '$TARGET_REPO' with the supplied GITHUB_TOKEN."
-    echo "[worker]   • Verify GITHUB_TOKEN is valid and not expired."
-    echo "[worker]   • Verify the token has 'repo' scope (classic) or 'contents:read' (fine-grained)."
-    echo "[worker]   • Verify TARGET_REPO='$TARGET_REPO' is correct (owner/repo format)."
+    echo "[worker]"
+    echo "[worker] GitHub API error:"
+    echo "$_gh_response" | sed 's/^/[worker]   /'
+    echo "[worker]"
+    echo "[worker] Troubleshooting:"
+    echo "[worker]   • Verify GITHUB_TOKEN is valid and not expired"
+    echo "[worker]   • Verify the token has 'repo' scope (classic) or 'contents:read/write' (fine-grained)"
+    echo "[worker]   • Verify TARGET_REPO='$TARGET_REPO' is correct (owner/repo format)"
+    echo "[worker]   • If the repo is private, ensure the token has access to it"
     exit 1
-}
+fi
+_push="$_gh_response"
 case "$_push" in
     "true")
         echo "[worker] ✓ GitHub: '$TARGET_REPO' accessible, push permission confirmed."
@@ -264,7 +312,7 @@ This PR was opened automatically by the [spec-template](https://github.com/NoahW
 
 The following files were copied from the \`dist/\` payload of the spec-template repo:
 
-- \`.claude/commands/\` — four slash commands: \`/respec\`, \`/intake\`, \`/knock-out-todos\`, \`/spec-backfill\`
+- \`.claude/commands/\` — slash commands: \`/respec\`, \`/intake\`, \`/knock-out-todos\`, \`/spec-backfill\`, \`/refine\`, \`/pr-review\`
 - \`specs/\` — starter spec directory (templates, ideas intake, agent instructions)
 - \`.github/workflows/spec-check.yml\` — PR check that warns when source changes lack spec updates
 
@@ -284,17 +332,70 @@ Run \`/respec\` at any time to pull in updates from the source repo."
 fi
 
 # ══ Operate mode ═══════════════════════════════════════════════════════════════
-# Used when the scaffold is already present. Runs intake + knock-out-todos via Claude CLI.
+# Multi-agent architecture: reads .claude/worker-config.yaml from the target repo
+# to determine which agents to run. Each agent gets its own branch, PR, and Claude session.
 
-# Pre-flight (operate mode): verify required command files exist in the cloned repo.
-# Claude reads these files to know what to do — missing files = empty run with wasted tokens.
+cd "$WORKSPACE"
+
+# ── Read worker-config.yaml ──────────────────────────────────────────────────
+WORKER_CONFIG="$WORKSPACE/$CLAUDE_CONFIG_PATH/worker-config.yaml"
+AGENT_DIR="/worker/agents"
+
+if [ -f "$WORKER_CONFIG" ]; then
+    echo "[worker] Reading worker config: $WORKER_CONFIG"
+    MAX_OPEN_PRS=$(python3 -c "
+import sys, re
+text = open('$WORKER_CONFIG').read()
+m = re.search(r'^max_open_prs:\s*(\d+)', text, re.MULTILINE)
+print(m.group(1) if m else '1')
+")
+    # Read agents as newline-separated list (lines under 'agents:' that start with '  - ')
+    AGENTS=$(python3 -c "
+import sys, re
+text = open('$WORKER_CONFIG').read()
+agents = re.findall(r'^\s+-\s+(\S+)', text[text.find('agents:'):], re.MULTILINE) if 'agents:' in text else []
+print('\n'.join(agents))
+" 2>/dev/null || echo "")
+else
+    echo "[worker] No worker-config.yaml found — using defaults."
+    MAX_OPEN_PRS=1
+    AGENTS="intake
+knock-out-todos"
+fi
+
+if [ -z "$AGENTS" ]; then
+    AGENTS="intake
+knock-out-todos"
+fi
+
+echo "[worker] Max open PRs: $MAX_OPEN_PRS"
+echo "[worker] Agents: $(echo "$AGENTS" | tr '\n' ' ')"
+
+# ── Verify agent instruction files exist ─────────────────────────────────────
 _missing=0
-for _cmd in "$WORKSPACE/$CLAUDE_CONFIG_PATH/commands/intake.md" \
-            "$WORKSPACE/$CLAUDE_CONFIG_PATH/commands/knock-out-todos.md"; do
-    if [ ! -f "$_cmd" ]; then
-        echo "[worker] PREFLIGHT FAIL: Required command file not found: $_cmd"
+for _agent in $AGENTS; do
+    if [ ! -f "$AGENT_DIR/$_agent.md" ]; then
+        echo "[worker] PREFLIGHT FAIL: Agent instruction file not found: $AGENT_DIR/$_agent.md"
         _missing=1
     fi
+done
+if [ "$_missing" -ne 0 ]; then
+    echo "[worker]   Available agents: $(ls "$AGENT_DIR"/*.md 2>/dev/null | xargs -I{} basename {} .md | tr '\n' ' ')"
+    echo "[worker]   Check worker-config.yaml agent names match files in $AGENT_DIR/"
+    exit 1
+fi
+
+# Verify command files for built-in agents that reference them
+for _agent in $AGENTS; do
+    case "$_agent" in
+        intake|knock-out-todos)
+            _cmd_file="$WORKSPACE/$CLAUDE_CONFIG_PATH/commands/lib/$_agent.md"
+            if [ ! -f "$_cmd_file" ]; then
+                echo "[worker] PREFLIGHT FAIL: Required command file not found: $_cmd_file"
+                _missing=1
+            fi
+            ;;
+    esac
 done
 if [ "$_missing" -ne 0 ]; then
     echo "[worker]   The scaffold may be incomplete. Possible fixes:"
@@ -302,59 +403,18 @@ if [ "$_missing" -ne 0 ]; then
     echo "[worker]     • Run /respec in the target repo to restore missing scaffold files."
     exit 1
 fi
-echo "[worker] ✓ Required command files present in $CLAUDE_CONFIG_PATH/commands/."
+echo "[worker] ✓ All agent files and required command files verified."
 
-# ── Activity check: is there new work for Claude to do? ──────────────────────
-# Run lightweight gh API calls before invoking Claude so runs with nothing
-# new to do exit immediately without spending any API tokens.
-#
-# Claude runs if ANY of the following are true:
-#   1. No open worker/* PR exists (TODOs may be waiting; Claude decides)
-#   2. An open worker/* PR has human comments (user.type=="User", body not 🤖-prefixed)
-#   3. Open issues exist with no intake label (intake:filed / rejected / ignore)
-#   4. A filed issue's most recent comment is human (user.type=="User", body not 🤖-prefixed)
+# ── Global activity signals (checked once) ───────────────────────────────────
+# These signals indicate new work exists in the repo. Individual agents decide
+# whether to run based on their own PR state plus these global signals.
 #
 # "Human" = GitHub user type is "User" AND body does NOT start with 🤖.
-#   - Personal-PAT mode: human and worker share the same login, so the 🤖
-#     prefix is the ONLY reliable discriminator. Login is not checked here.
-#   - Service-account mode: worker login differs AND worker uses 🤖 prefix.
-#     The user.type=="User" filter additionally excludes GitHub Bot accounts
-#     (github-actions[bot], dependabot, etc.) so they never trigger a run.
-echo "[worker] Checking for new activity..."
-_should_run=0
-_run_reason=""
+echo "[worker] Checking global activity signals..."
+_global_activity=0
+_global_reason=""
 
-# Condition 1 — no open worker/* PR ───────────────────────────────────────────
-_worker_pr=$(gh pr list \
-    --repo "$TARGET_REPO" \
-    --state open \
-    --json number,headRefName \
-    --jq '[.[] | select(.headRefName | startswith("worker/"))][0].number // empty' \
-    2>/dev/null || true)
-if [ -z "$_worker_pr" ]; then
-    _should_run=1
-    _run_reason="no open worker PR"
-fi
-
-# Condition 2 — human comments on the open worker PR ──────────────────────────
-if [ "$_should_run" -eq 0 ] && [ -n "$_worker_pr" ]; then
-    # jq filter: select comments from real users that don't carry the 🤖 prefix.
-    # WHY test() not ltrimstr(): ltrimstr removes only one exact character;
-    # a body starting with "  🤖" (two spaces) or "\n🤖" would slip through.
-    # test("^[[:space:]]*🤖") correctly matches any leading whitespace before the emoji.
-    _human_filter='[.[] | select(.user.type == "User" and (.body | test("^[[:space:]]*🤖") | not))] | length'
-    for _api in issues pulls; do
-        _n=$(gh api "repos/$TARGET_REPO/$_api/$_worker_pr/comments" \
-            --jq "$_human_filter" 2>/dev/null || echo "0")
-        if [ "${_n:-0}" -gt 0 ]; then
-            _should_run=1
-            _run_reason="${_n} human comment(s) on worker PR #$_worker_pr"
-            break
-        fi
-    done
-fi
-
-# Condition 3 — open issues with no intake label ──────────────────────────────
+# Signal A — open issues with no intake label
 _unprocessed=$(gh issue list \
     --repo "$TARGET_REPO" \
     --state open \
@@ -365,12 +425,12 @@ _unprocessed=$(gh issue list \
         ) | not
     )] | length' 2>/dev/null || echo "0")
 if [ "${_unprocessed:-0}" -gt 0 ]; then
-    _should_run=1
-    _run_reason="${_unprocessed} unprocessed issue(s) without intake labels"
+    _global_activity=1
+    _global_reason="${_unprocessed} unprocessed issue(s)"
 fi
 
-# Condition 4 — filed issue with human as the most recent commenter ────────────
-if [ "$_should_run" -eq 0 ]; then
+# Signal B — filed issue with human as the most recent commenter
+if [ "$_global_activity" -eq 0 ]; then
     _filed=$(gh issue list \
         --repo "$TARGET_REPO" \
         --state open \
@@ -385,77 +445,206 @@ if [ "$_should_run" -eq 0 ]; then
                   else "robot"
                   end' 2>/dev/null || echo "robot")
         if [ "$_last" = "human" ]; then
-            _should_run=1
-            _run_reason="human comment on filed issue #${_inum}"
+            _global_activity=1
+            _global_reason="human comment on filed issue #${_inum}"
             break
         fi
     done
 fi
 
-# Decision ─────────────────────────────────────────────────────────────────────
-if [ "$_should_run" -eq 0 ]; then
-    echo "[worker] No new activity requiring Claude's attention — skipping run."
-    if [ -n "$_worker_pr" ]; then
-        echo "[worker] Worker PR #$_worker_pr is open and up to date."
-        echo "[worker] Trigger the next run by:"
-        echo "[worker]   • Commenting on PR #$_worker_pr (without the 🤖 prefix)"
-        echo "[worker]   • Opening a new GitHub issue"
-        echo "[worker]   • Merging or closing PR #$_worker_pr"
+if [ "$_global_activity" -eq 1 ]; then
+    echo "[worker] Global activity: $_global_reason"
+else
+    echo "[worker] No global activity signals."
+fi
+
+# ── Enumerate all open worker/* PRs ──────────────────────────────────────────
+# Get all open PRs with branches matching worker/*/* to count against max_open_prs
+# and to find per-agent PRs.
+_all_worker_prs=$(gh pr list \
+    --repo "$TARGET_REPO" \
+    --state open \
+    --json number,headRefName \
+    --jq '.[] | select(.headRefName | startswith("worker/")) | "\(.headRefName) \(.number)"' \
+    2>/dev/null || true)
+_open_pr_count=0
+if [ -n "$_all_worker_prs" ]; then
+    _open_pr_count=$(printf '%s\n' "$_all_worker_prs" | grep -c .)
+fi
+echo "[worker] Open worker PRs: $_open_pr_count / $MAX_OPEN_PRS"
+
+# ── Human comment detection helpers ──────────────────────────────────────────
+_human_filter='[.[] | select(.user.type == "User" and (.body | test("^[[:space:]]*🤖") | not))] | length'
+_human_filter_reviews='[.[] | select(.user.type == "User" and (.body | test("^[[:space:]]*🤖") | not) and (.line != null))] | length'
+
+# ── Helper: check if a PR has human comments ─────────────────────────────────
+# Usage: has_human_comments PR_NUMBER → sets _has_comments=1 if found
+has_human_comments() {
+    local pr_num="$1"
+    _has_comments=0
+    _comment_reason=""
+
+    # Check issue comments (general PR conversation)
+    local n
+    n=$(gh api "repos/$TARGET_REPO/issues/$pr_num/comments" \
+        --jq "$_human_filter" 2>/dev/null || echo "0")
+    if [ "${n:-0}" -gt 0 ]; then
+        _has_comments=1
+        _comment_reason="${n} human comment(s) on PR #$pr_num"
+        return
     fi
-    exit 0
-fi
-echo "[worker] Activity detected: $_run_reason — proceeding."
 
-echo "[worker] Running Claude CLI..."
-cd "$WORKSPACE"
-
-INSTRUCTIONS_FILE="/worker/worker-instructions.md"
-if [ -f "$CLAUDE_CONFIG_PATH/worker-instructions.md" ]; then
-    # Allow the target repo to supply its own worker instructions
-    INSTRUCTIONS_FILE="$CLAUDE_CONFIG_PATH/worker-instructions.md"
-    echo "[worker] Using repo-local worker instructions."
-fi
-
-# Build the prompt: base instructions + injected run parameters.
-# WHY append rather than substitute: appending keeps the instructions file
-# self-contained and readable on its own; the parameters section at the end
-# acts as a final override that Claude reads last and therefore weighs most.
-_prompt="$(cat "$INSTRUCTIONS_FILE")
-
-- **MAX_TODOS**: $MAX_TODOS — maximum number of TODO items to knock out in a single fresh run
-- **TARGET_REPO**: $TARGET_REPO
-"
-
-echo "[worker] Run parameters: MAX_TODOS=$MAX_TODOS"
-
-# Temporarily disable errexit so we can inspect the log for a helpful auth error
-# message before exiting, rather than letting the bare "Not logged in · Please
-# run /login" TUI text be the last thing the user sees.
-set +e
-claude \
-    --dangerously-skip-permissions \
-    -p "$_prompt" \
-    2>&1 | tee "$LOG_FILE"
-CLAUDE_EXIT=${PIPESTATUS[0]}
-set -e
-
-if [ "$CLAUDE_EXIT" -ne 0 ]; then
-    if grep -qE "Not logged in|401|authentication_error|Invalid authentication" "$LOG_FILE" 2>/dev/null; then
-        echo "[worker] ────────────────────────────────────────────────────────────────"
-        echo "[worker] ERROR: Claude authentication failed."
-        echo "[worker]        Subscription OAuth tokens expire and cannot be refreshed"
-        echo "[worker]        in a headless container (no browser available)."
-        echo "[worker]"
-        echo "[worker]        To fix: use Claude interactively on your host machine"
-        echo "[worker]        (this triggers a token refresh), then re-copy the fresh"
-        echo "[worker]        credentials file to the Docker host:"
-        echo "[worker]          ~/.claude/.credentials.json → C:\.claude\.credentials.json"
-        echo "[worker]"
-        echo "[worker]        Or avoid this entirely with API key mode:"
-        echo "[worker]          docker run -e ANTHROPIC_API_KEY=sk-ant-... ..."
-        echo "[worker] ────────────────────────────────────────────────────────────────"
+    # Check PR review comments (inline code comments, excluding outdated)
+    n=$(gh api "repos/$TARGET_REPO/pulls/$pr_num/comments" \
+        --jq "$_human_filter_reviews" 2>/dev/null || echo "0")
+    if [ "${n:-0}" -gt 0 ]; then
+        _has_comments=1
+        _comment_reason="${n} human review comment(s) on PR #$pr_num"
     fi
-    exit "$CLAUDE_EXIT"
-fi
+}
 
-echo "[worker] Run complete. Log: $LOG_FILE"
+# ── Per-agent loop ───────────────────────────────────────────────────────────
+_any_agent_ran=0
+_any_agent_failed=0
+_agent_results=""
+TODAY=$(date +%Y-%m-%d)
+
+for _agent in $AGENTS; do
+    echo ""
+    echo "[worker] ── Agent: $_agent ────────────────────────────────────────────"
+
+    # Find this agent's existing open PR (branch pattern: worker/{agent-name}/*)
+    _agent_pr=""
+    _agent_pr_branch=""
+    if [ -n "$_all_worker_prs" ]; then
+        _agent_pr_branch=$(echo "$_all_worker_prs" | grep "^worker/$_agent/" | head -1 | awk '{print $1}' || true)
+        _agent_pr=$(echo "$_all_worker_prs" | grep "^worker/$_agent/" | head -1 | awk '{print $2}' || true)
+    fi
+
+    # Use the existing PR's branch when responding to comments; today's date for new work
+    if [ -n "$_agent_pr_branch" ]; then
+        _agent_branch="$_agent_pr_branch"
+    else
+        _agent_branch="worker/$_agent/$TODAY"
+    fi
+
+    _agent_should_run=0
+    _agent_reason=""
+    _is_new_pr=0
+
+    if [ -n "$_agent_pr" ]; then
+        # PR exists — check for human comments or merge conflicts
+        echo "[worker]   Existing PR: #$_agent_pr"
+        has_human_comments "$_agent_pr"
+        if [ "$_has_comments" -eq 1 ]; then
+            _agent_should_run=1
+            _agent_reason="$_comment_reason"
+        fi
+
+        # Check for merge conflicts (mergeable=false means conflicts exist)
+        if [ "$_agent_should_run" -eq 0 ]; then
+            _mergeable=$(gh api "repos/$TARGET_REPO/pulls/$_agent_pr" --jq '.mergeable // true' 2>/dev/null || echo "true")
+            if [ "$_mergeable" = "false" ]; then
+                _agent_should_run=1
+                _agent_reason="merge conflicts on PR #$_agent_pr"
+            else
+                echo "[worker]   No human comments or merge conflicts on PR #$_agent_pr — skipping."
+            fi
+        fi
+    else
+        # No PR — run only if global activity signals fire
+        _is_new_pr=1
+        if [ "$_global_activity" -eq 1 ]; then
+            # Check max_open_prs cap before allowing a new PR
+            if [ "$_open_pr_count" -ge "$MAX_OPEN_PRS" ]; then
+                echo "[worker]   Would create new PR but max_open_prs cap ($MAX_OPEN_PRS) reached — skipping."
+            else
+                _agent_should_run=1
+                _agent_reason="$_global_reason (new work)"
+            fi
+        else
+            echo "[worker]   No existing PR and no global activity — skipping."
+        fi
+    fi
+
+    if [ "$_agent_should_run" -eq 0 ]; then
+        _agent_results="${_agent_results}  $_agent: skipped\n"
+        continue
+    fi
+
+    echo "[worker]   Running: $_agent_reason"
+
+    # Export per-agent environment variables
+    export AGENT_NAME="$_agent"
+    export AGENT_BRANCH="$_agent_branch"
+    if [ -n "$_agent_pr" ]; then
+        export WORKER_PR_NUMBER="$_agent_pr"
+    else
+        unset WORKER_PR_NUMBER 2>/dev/null || true
+    fi
+
+    # Each agent file is self-contained: it references the common preamble
+    # and completion files via Read instructions for Claude.
+    _prompt="$(cat "$AGENT_DIR/$_agent.md")"
+
+    _agent_log="$STATE_DIR/$_agent-last-run.log"
+
+    set +e
+    if [ -n "$MODEL" ]; then
+        echo "[worker]   Model: $MODEL"
+        claude --dangerously-skip-permissions --model "$MODEL" \
+            -p "$_prompt" 2>&1 | tee "$_agent_log"
+    else
+        claude --dangerously-skip-permissions \
+            -p "$_prompt" 2>&1 | tee "$_agent_log"
+    fi
+    _agent_exit=${PIPESTATUS[0]}
+    set -e
+
+    if [ "$_agent_exit" -ne 0 ]; then
+        echo "[worker]   Agent '$_agent' exited with code $_agent_exit"
+        if grep -qE "Not logged in|401|authentication_error|Invalid authentication" "$_agent_log" 2>/dev/null; then
+            echo "[worker] ────────────────────────────────────────────────────────────────"
+            echo "[worker] ERROR: Claude authentication failed."
+            echo "[worker]        Subscription OAuth tokens expire and cannot be refreshed"
+            echo "[worker]        in a headless container (no browser available)."
+            echo "[worker]"
+            echo "[worker]        To fix: use API key mode for containers:"
+            echo "[worker]          docker run -e ANTHROPIC_API_KEY=sk-ant-... ..."
+            echo "[worker] ────────────────────────────────────────────────────────────────"
+            # Auth failure is fatal — no point running remaining agents
+            exit "$_agent_exit"
+        fi
+        _any_agent_failed=1
+        _agent_results="${_agent_results}  $_agent: FAILED (exit $_agent_exit)\n"
+    else
+        _any_agent_ran=1
+        # If this was a new-PR run, check whether the agent actually opened one
+        # (it may have run but found nothing to do). Only increment if the PR exists now.
+        if [ "$_is_new_pr" -eq 1 ]; then
+            _new_pr_check=$(gh pr list \
+                --repo "$TARGET_REPO" \
+                --state open \
+                --json number,headRefName \
+                --jq ".[] | select(.headRefName == \"$_agent_branch\") | .number" \
+                2>/dev/null || true)
+            if [ -n "$_new_pr_check" ]; then
+                _open_pr_count=$(( _open_pr_count + 1 ))
+            fi
+        fi
+        _agent_results="${_agent_results}  $_agent: OK\n"
+    fi
+
+    echo "[worker]   Agent '$_agent' complete. Log: $_agent_log"
+done
+
+# ── Summary ──────────────────────────────────────────────────────────────────
+echo ""
+echo "[worker] ────────────────────────────────────────────────────────────────"
+echo "[worker] Run complete. Agent results:"
+echo -e "$_agent_results"
+echo "[worker] ────────────────────────────────────────────────────────────────"
+
+if [ "$_any_agent_failed" -ne 0 ]; then
+    exit 1
+fi

@@ -1,0 +1,24 @@
+
+# Local development compose file that builds the worker image locally
+# instead of pulling from GHCR.
+#
+# Usage:
+#   docker compose -f docker-compose.local.yml up
+#   docker compose -f docker-compose.local.yml up --build  # Force rebuild
+
+services:
+  worker:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    env_file:
+      - .env  # Automatically loads from .env file (git-ignored)
+    volumes:
+      - spec-worker-state:/worker/state
+      # Optional: uncomment for subscription mode
+      # - ~/.claude:/home/worker/.claude:ro
+
+volumes:
+  spec-worker-state:
+    name: spec-worker-state
