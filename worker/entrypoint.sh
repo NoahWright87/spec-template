@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Worker entrypoint — executed on each cron iteration.
+# Fleet manager entrypoint — executed on each cron iteration.
 #
 # Flow: validate env → authenticate → clone/update target repo
 #         → detect scaffold → install mode OR operate mode → exit
@@ -8,12 +8,14 @@
 #   → copy dist/ payload, create branch, open bootstrap PR, exit
 #
 # Operate mode: scaffold found in target repo
-#   → read .claude/worker-config.yaml for agent list + limits
+#   → read .agents/config.json (or legacy worker-config.yaml) for agent list + limits
 #   → check global activity signals (issues, comments)
-#   → for each declared agent: check per-agent PR state, run Claude CLI
+#   → for each declared agent: assemble prompt from tasks, check triggers, run Claude CLI
 #   → each agent gets its own branch (worker/{name}/YYYY-MM-DD) and PR
+#   → write state files (.agents/{name}/state.json, .agents/coordination.json)
 #
 # State that should survive between runs (logs) lives in /worker/state (volume).
+# Agent state (.agents/) is committed to the target repo for cross-agent awareness.
 
 set -euo pipefail
 
@@ -332,319 +334,81 @@ Run \`/respec\` at any time to pull in updates from the source repo."
 fi
 
 # ══ Operate mode ═══════════════════════════════════════════════════════════════
-# Multi-agent architecture: reads .claude/worker-config.yaml from the target repo
-# to determine which agents to run. Each agent gets its own branch, PR, and Claude session.
+# Composable agent architecture: reads .agents/config.json (or legacy worker-config.yaml)
+# from the target repo to determine which agents to run. Each agent is assembled from
+# task files and gets its own branch, PR, and Claude session.
 
 cd "$WORKSPACE"
 
-# ── Read worker-config.yaml ──────────────────────────────────────────────────
-WORKER_CONFIG="$WORKSPACE/$CLAUDE_CONFIG_PATH/worker-config.yaml"
+# ── Source fleet manager libraries ───────────────────────────────────────────
+FLEET_LIB="/worker/lib"
+source "$FLEET_LIB/config.sh"
+source "$FLEET_LIB/activity.sh"
+source "$FLEET_LIB/prompt-assembly.sh"
+source "$FLEET_LIB/agent-runner.sh"
+
+# ── Set up paths ─────────────────────────────────────────────────────────────
 AGENT_DIR="/worker/agents"
+TASK_DIR="/worker/tasks"
+export AGENT_DIR TASK_DIR WORKSPACE TARGET_REPO TARGET_BRANCH STATE_DIR MODEL
 
-if [ -f "$WORKER_CONFIG" ]; then
-    echo "[worker] Reading worker config: $WORKER_CONFIG"
-    MAX_OPEN_PRS=$(python3 -c "
-import sys, re
-text = open('$WORKER_CONFIG').read()
-m = re.search(r'^max_open_prs:\s*(\d+)', text, re.MULTILINE)
-print(m.group(1) if m else '1')
-")
-    # Read agents as newline-separated list (lines under 'agents:' that start with '  - ')
-    AGENTS=$(python3 -c "
-import sys, re
-text = open('$WORKER_CONFIG').read()
-agents = re.findall(r'^\s+-\s+(\S+)', text[text.find('agents:'):], re.MULTILINE) if 'agents:' in text else []
-print('\n'.join(agents))
-" 2>/dev/null || echo "")
-else
-    echo "[worker] No worker-config.yaml found — using defaults."
-    MAX_OPEN_PRS=1
-    AGENTS="intake
-knock-out-todos"
-fi
-
-if [ -z "$AGENTS" ]; then
-    AGENTS="intake
-knock-out-todos"
-fi
-
-echo "[worker] Max open PRs: $MAX_OPEN_PRS"
-echo "[worker] Agents: $(echo "$AGENTS" | tr '\n' ' ')"
+# ── Read fleet config ────────────────────────────────────────────────────────
+read_fleet_config
+apply_config_defaults
 
 # ── Verify agent instruction files exist ─────────────────────────────────────
 _missing=0
 for _agent in $AGENTS; do
     if [ ! -f "$AGENT_DIR/$_agent.md" ]; then
-        echo "[worker] PREFLIGHT FAIL: Agent instruction file not found: $AGENT_DIR/$_agent.md"
+        echo "[fleet] PREFLIGHT FAIL: Agent manifest not found: $AGENT_DIR/$_agent.md"
         _missing=1
     fi
 done
 if [ "$_missing" -ne 0 ]; then
-    echo "[worker]   Available agents: $(ls "$AGENT_DIR"/*.md 2>/dev/null | xargs -I{} basename {} .md | tr '\n' ' ')"
-    echo "[worker]   Check worker-config.yaml agent names match files in $AGENT_DIR/"
+    echo "[fleet]   Available agents: $(ls "$AGENT_DIR"/*.md 2>/dev/null | grep -v AGENTS.md | grep -v README.md | xargs -I{} basename {} .md | tr '\n' ' ')"
+    echo "[fleet]   Check .agents/config.json agent names match files in $AGENT_DIR/"
     exit 1
 fi
 
-# Verify command files for built-in agents that reference them
+# Verify command files exist in the container for agents that reference them
+COMMAND_DIR="/worker/commands/lib"
 for _agent in $AGENTS; do
     case "$_agent" in
         intake|knock-out-todos)
-            _cmd_file="$WORKSPACE/$CLAUDE_CONFIG_PATH/commands/lib/$_agent.md"
+            _cmd_file="$COMMAND_DIR/$_agent.md"
             if [ ! -f "$_cmd_file" ]; then
-                echo "[worker] PREFLIGHT FAIL: Required command file not found: $_cmd_file"
+                echo "[fleet] PREFLIGHT FAIL: Required command file not found: $_cmd_file"
                 _missing=1
             fi
             ;;
     esac
 done
 if [ "$_missing" -ne 0 ]; then
-    echo "[worker]   The scaffold may be incomplete. Possible fixes:"
-    echo "[worker]     • Wait for the bootstrap PR to be merged if it's still open."
-    echo "[worker]     • Run /respec in the target repo to restore missing scaffold files."
+    echo "[fleet]   The container image may be outdated. Rebuild: docker compose build worker"
     exit 1
 fi
-echo "[worker] ✓ All agent files and required command files verified."
+echo "[fleet] ✓ All agent manifests and required command files verified."
 
-# ── Global activity signals (checked once) ───────────────────────────────────
-# These signals indicate new work exists in the repo. Individual agents decide
-# whether to run based on their own PR state plus these global signals.
-#
-# "Human" = GitHub user type is "User" AND body does NOT start with 🤖.
-echo "[worker] Checking global activity signals..."
-_global_activity=0
-_global_reason=""
+# ── Check global activity signals ────────────────────────────────────────────
+check_global_activity
+enumerate_worker_prs
 
-# Signal A — open issues with no intake label
-_unprocessed=$(gh issue list \
-    --repo "$TARGET_REPO" \
-    --state open \
-    --json number,labels \
-    --jq '[.[] | select(
-        (.labels | map(.name) |
-            (contains(["intake:filed"]) or contains(["intake:rejected"]) or contains(["intake:ignore"]))
-        ) | not
-    )] | length' 2>/dev/null || echo "0")
-if [ "${_unprocessed:-0}" -gt 0 ]; then
-    _global_activity=1
-    _global_reason="${_unprocessed} unprocessed issue(s)"
+# ── Run agents ───────────────────────────────────────────────────────────────
+run_agents
+_exit_code=$?
+
+# ── Commit state files to target repo ────────────────────────────────────────
+if [ -d "$WORKSPACE/.agents" ]; then
+    cd "$WORKSPACE"
+    if git diff --quiet .agents/ 2>/dev/null && git diff --cached --quiet .agents/ 2>/dev/null; then
+        echo "[fleet] No state changes to commit."
+    else
+        git add .agents/
+        git commit -m "Update agent state files
+
+Written by the spec-template fleet manager after agent run." 2>/dev/null || true
+        git push origin HEAD 2>/dev/null || true
+    fi
 fi
 
-# Signal B — filed issue with human as the most recent commenter
-if [ "$_global_activity" -eq 0 ]; then
-    _filed=$(gh issue list \
-        --repo "$TARGET_REPO" \
-        --state open \
-        --label "intake:filed" \
-        --json number \
-        --jq '.[].number' 2>/dev/null || echo "")
-    for _inum in $_filed; do
-        _last=$(gh api "repos/$TARGET_REPO/issues/$_inum/comments" \
-            --jq 'if length == 0 then "empty"
-                  elif (last | .user.type == "User" and (.body | test("^[[:space:]]*🤖") | not))
-                  then "human"
-                  else "robot"
-                  end' 2>/dev/null || echo "robot")
-        if [ "$_last" = "human" ]; then
-            _global_activity=1
-            _global_reason="human comment on filed issue #${_inum}"
-            break
-        fi
-    done
-fi
-
-if [ "$_global_activity" -eq 1 ]; then
-    echo "[worker] Global activity: $_global_reason"
-else
-    echo "[worker] No global activity signals."
-fi
-
-# ── Enumerate all open worker/* PRs ──────────────────────────────────────────
-# Get all open PRs with branches matching worker/*/* to count against max_open_prs
-# and to find per-agent PRs.
-_all_worker_prs=$(gh pr list \
-    --repo "$TARGET_REPO" \
-    --state open \
-    --json number,headRefName \
-    --jq '.[] | select(.headRefName | startswith("worker/")) | "\(.headRefName) \(.number)"' \
-    2>/dev/null || true)
-_open_pr_count=0
-if [ -n "$_all_worker_prs" ]; then
-    _open_pr_count=$(printf '%s\n' "$_all_worker_prs" | grep -c .)
-fi
-echo "[worker] Open worker PRs: $_open_pr_count / $MAX_OPEN_PRS"
-
-# ── Human comment detection helpers ──────────────────────────────────────────
-_human_filter='[.[] | select(.user.type == "User" and (.body | test("^[[:space:]]*🤖") | not))] | length'
-_human_filter_reviews='[.[] | select(.user.type == "User" and (.body | test("^[[:space:]]*🤖") | not) and (.line != null))] | length'
-
-# ── Helper: check if a PR has human comments ─────────────────────────────────
-# Usage: has_human_comments PR_NUMBER → sets _has_comments=1 if found
-has_human_comments() {
-    local pr_num="$1"
-    _has_comments=0
-    _comment_reason=""
-
-    # Check issue comments (general PR conversation)
-    local n
-    n=$(gh api "repos/$TARGET_REPO/issues/$pr_num/comments" \
-        --jq "$_human_filter" 2>/dev/null || echo "0")
-    if [ "${n:-0}" -gt 0 ]; then
-        _has_comments=1
-        _comment_reason="${n} human comment(s) on PR #$pr_num"
-        return
-    fi
-
-    # Check PR review comments (inline code comments, excluding outdated)
-    n=$(gh api "repos/$TARGET_REPO/pulls/$pr_num/comments" \
-        --jq "$_human_filter_reviews" 2>/dev/null || echo "0")
-    if [ "${n:-0}" -gt 0 ]; then
-        _has_comments=1
-        _comment_reason="${n} human review comment(s) on PR #$pr_num"
-    fi
-}
-
-# ── Per-agent loop ───────────────────────────────────────────────────────────
-_any_agent_ran=0
-_any_agent_failed=0
-_agent_results=""
-TODAY=$(date +%Y-%m-%d)
-
-for _agent in $AGENTS; do
-    echo ""
-    echo "[worker] ── Agent: $_agent ────────────────────────────────────────────"
-
-    # Find this agent's existing open PR (branch pattern: worker/{agent-name}/*)
-    _agent_pr=""
-    _agent_pr_branch=""
-    if [ -n "$_all_worker_prs" ]; then
-        _agent_pr_branch=$(echo "$_all_worker_prs" | grep "^worker/$_agent/" | head -1 | awk '{print $1}' || true)
-        _agent_pr=$(echo "$_all_worker_prs" | grep "^worker/$_agent/" | head -1 | awk '{print $2}' || true)
-    fi
-
-    # Use the existing PR's branch when responding to comments; today's date for new work
-    if [ -n "$_agent_pr_branch" ]; then
-        _agent_branch="$_agent_pr_branch"
-    else
-        _agent_branch="worker/$_agent/$TODAY"
-    fi
-
-    _agent_should_run=0
-    _agent_reason=""
-    _is_new_pr=0
-
-    if [ -n "$_agent_pr" ]; then
-        # PR exists — check for human comments or merge conflicts
-        echo "[worker]   Existing PR: #$_agent_pr"
-        has_human_comments "$_agent_pr"
-        if [ "$_has_comments" -eq 1 ]; then
-            _agent_should_run=1
-            _agent_reason="$_comment_reason"
-        fi
-
-        # Check for merge conflicts (mergeable=false means conflicts exist)
-        if [ "$_agent_should_run" -eq 0 ]; then
-            _mergeable=$(gh api "repos/$TARGET_REPO/pulls/$_agent_pr" --jq '.mergeable // true' 2>/dev/null || echo "true")
-            if [ "$_mergeable" = "false" ]; then
-                _agent_should_run=1
-                _agent_reason="merge conflicts on PR #$_agent_pr"
-            else
-                echo "[worker]   No human comments or merge conflicts on PR #$_agent_pr — skipping."
-            fi
-        fi
-    else
-        # No PR — run only if global activity signals fire
-        _is_new_pr=1
-        if [ "$_global_activity" -eq 1 ]; then
-            # Check max_open_prs cap before allowing a new PR
-            if [ "$_open_pr_count" -ge "$MAX_OPEN_PRS" ]; then
-                echo "[worker]   Would create new PR but max_open_prs cap ($MAX_OPEN_PRS) reached — skipping."
-            else
-                _agent_should_run=1
-                _agent_reason="$_global_reason (new work)"
-            fi
-        else
-            echo "[worker]   No existing PR and no global activity — skipping."
-        fi
-    fi
-
-    if [ "$_agent_should_run" -eq 0 ]; then
-        _agent_results="${_agent_results}  $_agent: skipped\n"
-        continue
-    fi
-
-    echo "[worker]   Running: $_agent_reason"
-
-    # Export per-agent environment variables
-    export AGENT_NAME="$_agent"
-    export AGENT_BRANCH="$_agent_branch"
-    if [ -n "$_agent_pr" ]; then
-        export WORKER_PR_NUMBER="$_agent_pr"
-    else
-        unset WORKER_PR_NUMBER 2>/dev/null || true
-    fi
-
-    # Each agent file is self-contained: it references the common preamble
-    # and completion files via Read instructions for Claude.
-    _prompt="$(cat "$AGENT_DIR/$_agent.md")"
-
-    _agent_log="$STATE_DIR/$_agent-last-run.log"
-
-    set +e
-    if [ -n "$MODEL" ]; then
-        echo "[worker]   Model: $MODEL"
-        claude --dangerously-skip-permissions --model "$MODEL" \
-            -p "$_prompt" 2>&1 | tee "$_agent_log"
-    else
-        claude --dangerously-skip-permissions \
-            -p "$_prompt" 2>&1 | tee "$_agent_log"
-    fi
-    _agent_exit=${PIPESTATUS[0]}
-    set -e
-
-    if [ "$_agent_exit" -ne 0 ]; then
-        echo "[worker]   Agent '$_agent' exited with code $_agent_exit"
-        if grep -qE "Not logged in|401|authentication_error|Invalid authentication" "$_agent_log" 2>/dev/null; then
-            echo "[worker] ────────────────────────────────────────────────────────────────"
-            echo "[worker] ERROR: Claude authentication failed."
-            echo "[worker]        Subscription OAuth tokens expire and cannot be refreshed"
-            echo "[worker]        in a headless container (no browser available)."
-            echo "[worker]"
-            echo "[worker]        To fix: use API key mode for containers:"
-            echo "[worker]          docker run -e ANTHROPIC_API_KEY=sk-ant-... ..."
-            echo "[worker] ────────────────────────────────────────────────────────────────"
-            # Auth failure is fatal — no point running remaining agents
-            exit "$_agent_exit"
-        fi
-        _any_agent_failed=1
-        _agent_results="${_agent_results}  $_agent: FAILED (exit $_agent_exit)\n"
-    else
-        _any_agent_ran=1
-        # If this was a new-PR run, check whether the agent actually opened one
-        # (it may have run but found nothing to do). Only increment if the PR exists now.
-        if [ "$_is_new_pr" -eq 1 ]; then
-            _new_pr_check=$(gh pr list \
-                --repo "$TARGET_REPO" \
-                --state open \
-                --json number,headRefName \
-                --jq ".[] | select(.headRefName == \"$_agent_branch\") | .number" \
-                2>/dev/null || true)
-            if [ -n "$_new_pr_check" ]; then
-                _open_pr_count=$(( _open_pr_count + 1 ))
-            fi
-        fi
-        _agent_results="${_agent_results}  $_agent: OK\n"
-    fi
-
-    echo "[worker]   Agent '$_agent' complete. Log: $_agent_log"
-done
-
-# ── Summary ──────────────────────────────────────────────────────────────────
-echo ""
-echo "[worker] ────────────────────────────────────────────────────────────────"
-echo "[worker] Run complete. Agent results:"
-echo -e "$_agent_results"
-echo "[worker] ────────────────────────────────────────────────────────────────"
-
-if [ "$_any_agent_failed" -ne 0 ]; then
-    exit 1
-fi
+exit "$_exit_code"
