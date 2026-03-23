@@ -1,0 +1,34 @@
+{
+  "max_open_prs": 1,
+  "default_agents": ["intake", "knock-out-todos"],
+  "agent_catalog": {
+    "intake": {
+      "threat_level": "low",
+      "description": "Route ideas and GitHub Issues to spec TODO files"
+    },
+    "knock-out-todos": {
+      "threat_level": "medium",
+      "description": "Implement the easiest open TODO items"
+    },
+    "docs-keeper": {
+      "threat_level": "low",
+      "description": "Keep documentation in sync with code changes"
+    },
+    "spec-backfiller": {
+      "threat_level": "low",
+      "description": "Generate specs from existing code"
+    },
+    "security-scanner": {
+      "threat_level": "low",
+      "description": "Flag and address security issues"
+    },
+    "flag-cleanup": {
+      "threat_level": "medium",
+      "description": "Remove stale feature flags"
+    },
+    "sprint-reviewer": {
+      "threat_level": "low",
+      "description": "Auto-generate sprint review summaries"
+    }
+  }
+}

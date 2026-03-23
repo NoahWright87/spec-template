@@ -9,6 +9,8 @@ RUN apk add --no-cache \
     bash \
     python3 \
     github-cli
+# python3 is needed only for legacy worker-config.yaml parsing fallback.
+# Remove once all target repos have migrated to .agents/config.json.
 
 # ── Claude Code CLI ────────────────────────────────────────────────────────────
 RUN npm install -g @anthropic-ai/claude-code@2.1.71
@@ -16,11 +18,14 @@ RUN npm install -g @anthropic-ai/claude-code@2.1.71
 # ── Worker runtime files ───────────────────────────────────────────────────────
 WORKDIR /worker
 COPY worker/entrypoint.sh ./entrypoint.sh
-COPY worker/common/ ./common/
 COPY worker/agents/ ./agents/
+COPY worker/tasks/ ./tasks/
+COPY worker/lib/ ./lib/
+# Full command files baked into image (agents reference these by absolute path)
+COPY .claude/commands/ ./commands/
 # dist/ is the scaffold payload used by install mode to bootstrap unscaffolded repos
 COPY dist/ ./dist/
-RUN chmod +x ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh ./lib/*.sh
 
 # ── Directories ────────────────────────────────────────────────────────────────
 # /worker/workspace — target repo clone (can be a volume for faster cron re-runs)
@@ -53,5 +58,8 @@ USER worker
 #                        Defaults to Claude CLI's default if not specified
 #                        When using subscription mode (mounted ~/.claude), MODEL is accepted
 #                        but model validation is skipped (no API key to validate against)
+#                     FLEET_AGENTS (comma-separated agent list override, e.g. "intake,docs-keeper")
+#                        Overrides the agent list from .agents/config.json
+#                        Useful for k8s overlays to control which agents run per-repo
 
 ENTRYPOINT ["/worker/entrypoint.sh"]
