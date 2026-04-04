@@ -1,0 +1,161 @@
+---
+name: Agent PR Audit
+
+# Scans agent-authored PRs (from worker/* branches) for security risks:
+# prompt injections, unauthorized external calls, credential leaks, and
+# other AI security patterns. Posts a summary comment and fails the check
+# if high-confidence issues are found.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  audit:
+    name: Audit agent changes
+    runs-on: ubuntu-latest
+    # Only run on agent branches (worker/*)
+    if: startsWith(github.head_ref, 'worker/')
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed for git diff against base branch
+
+      - name: Scan diff for suspicious patterns
+        id: scan
+        run: |
+          diff=$(git diff "origin/${{ github.base_ref }}...HEAD")
+
+          findings=()
+
+          # --- Pattern 1: External curl/wget to unknown domains ---
+          # Added lines (+) containing curl or wget with a URL
+          while IFS= read -r line; do
+            findings+=("EXTERNAL_HTTP_CALL: $line")
+          done < <(echo "$diff" | grep -E '^\+' | grep -v '^\+\+\+' \
+            | grep -E '(curl|wget)\s+.*https?://' \
+            | grep -vE 'https?://(github\.com|api\.github\.com|ghcr\.io|anthropic\.com|registry\.npmjs\.org|pypi\.org|index\.docker\.io|docker\.io)' \
+            || true)
+
+          # --- Pattern 2: eval or exec of dynamic strings ---
+          while IFS= read -r line; do
+            findings+=("DYNAMIC_EXEC: $line")
+          done < <(echo "$diff" | grep -E '^\+' | grep -v '^\+\+\+' \
+            | grep -E '\b(eval|exec)\s*[\(\$`"]' \
+            || true)
+
+          # --- Pattern 3: Base64-encoded strings in task/agent files ---
+          # (long base64 blobs are suspicious — could be obfuscated payloads)
+          while IFS= read -r line; do
+            findings+=("BASE64_BLOB: $line")
+          done < <(echo "$diff" | grep -E '^\+' | grep -v '^\+\+\+' \
+            | grep -E '[A-Za-z0-9+/]{60,}={0,2}' \
+            || true)
+
+          # --- Pattern 4: New credential-like env var assignments ---
+          while IFS= read -r line; do
+            findings+=("CREDENTIAL_ASSIGNMENT: $line")
+          done < <(echo "$diff" | grep -E '^\+' | grep -v '^\+\+\+' \
+            | grep -E '(TOKEN|SECRET|PASSWORD|API_KEY|PRIVATE_KEY)\s*=' \
+            | grep -vE '^\+\s*#' \
+            | grep -vE '"\$\{' \
+            | grep -vE "'\\\$" \
+            | grep -vE '=\s*["'"'"']?\$' \
+            | grep -vE '=\s*\$\{' \
+            || true)
+
+          # --- Pattern 5: Prompt injection markers in agent/task files ---
+          # Look for suspicious instruction overrides targeting agent behavior
+          while IFS= read -r line; do
+            findings+=("PROMPT_INJECTION_MARKER: $line")
+          done < <(echo "$diff" | grep -E '^\+' | grep -v '^\+\+\+' \
+            | grep -iE '(ignore previous instructions|disregard (above|prior|previous)|new (system|admin|root) (prompt|instruction)|you are now|forget (everything|all)|system override|STOP\. New instructions)' \
+            || true)
+
+          # Output findings for next step
+          count=${#findings[@]}
+          echo "finding_count=$count" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "findings<<FINDINGS_EOF"
+            printf '%s\n' "${findings[@]}"
+            echo "FINDINGS_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post audit comment
+        uses: actions/github-script@v7
+        env:
+          FINDING_COUNT: ${{ steps.scan.outputs.finding_count }}
+          FINDINGS: ${{ steps.scan.outputs.findings }}
+        with:
+          script: |
+            const marker = '<!-- agent-audit-check -->';
+            const count = parseInt(process.env.FINDING_COUNT || '0', 10);
+            const raw = process.env.FINDINGS || '';
+            const findings = raw.trim() ? raw.trim().split('\n') : [];
+
+            let body;
+            if (count === 0) {
+              body = `${marker}
+            ## ✅ Agent audit passed
+
+            No suspicious patterns detected in this agent PR.
+
+            *Checks: external HTTP calls, dynamic eval/exec, base64 blobs, credential assignments, prompt injection markers.*`;
+            } else {
+              const rows = findings.map(f => {
+                const [type, ...rest] = f.split(': ');
+                const detail = rest.join(': ').trim().substring(0, 120);
+                return `| \`${type}\` | \`${detail}\` |`;
+              }).join('\n');
+
+              body = `${marker}
+            ## ⚠️ Agent audit: suspicious patterns found
+
+            The following patterns were detected in the diff — please review before merging:
+
+            | Pattern type | Excerpt |
+            |---|---|
+            ${rows}
+
+            **Checks performed:** external HTTP calls to non-allowlisted domains, dynamic \`eval\`/\`exec\`, base64 blobs ≥60 chars, hardcoded credential assignments, prompt injection markers.
+
+            *This check is required — please review the findings above and confirm they are intentional before merging.*`;
+            }
+
+            // Find existing audit comment and update or create
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Fail if findings detected
+        if: steps.scan.outputs.finding_count != '0'
+        run: |
+          echo "::error::Agent audit found ${{ steps.scan.outputs.finding_count }} suspicious pattern(s). Review the PR comment for details."
+          exit 1

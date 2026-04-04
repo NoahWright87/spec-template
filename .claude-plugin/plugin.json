@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "spec-template",
+  "version": "1.0.0",
+  "description": "Spec-driven development tools: intake, refinement, implementation, review — all guided by specs as source of truth",
+  "owner": {
+    "name": "Noah Wright"
+  },
+  "plugins": [
+    {
+      "name": "spec-template",
+      "description": "Spec-driven development system: file ideas, refine TODOs, implement changes, review PRs",
+      "source": "./plugin",
+      "version": "1.0.0",
+      "author": {
+        "name": "Noah Wright"
+      },
+      "category": "productivity"
+    }
+  ]
+}

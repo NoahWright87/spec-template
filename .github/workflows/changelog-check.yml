@@ -1,0 +1,34 @@
+---
+name: Changelog check
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  check:
+    name: Verify CHANGELOG entry
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from release tag
+        id: version
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#spec-template-worker/}"
+          if [ "$VERSION" = "$TAG" ]; then
+            echo "::error::Release tag '${TAG}' does not start with 'spec-template-worker/' — cannot extract version"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check CHANGELOG.md contains version header
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if grep -qxF "## ${VERSION}" CHANGELOG.md; then
+            echo "CHANGELOG.md contains an exact '## ${VERSION}' header — check passed."
+          else
+            echo "::error::CHANGELOG.md does not contain a '## ${VERSION}' section. Please add a changelog entry before publishing a release."
+            exit 1
+          fi

@@ -1,5 +1,11 @@
 # Local Claude Code settings — machine-specific, not for sharing
 .claude/settings.local.json
 
-# Worker secrets — never commit actual credentials
+# Worker runtime secrets — never commit
 .env
+
+# Kubernetes secrets — never commit
+k8s/secret.yaml
+
+# Claude session state — ephemeral, machine-specific
+.claude/session-env/

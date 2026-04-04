@@ -1,7 +1,7 @@
 # Spec Template — Roadmap
 
 ## Summary
-This repo provides two products: (1) an installable spec / intake / TODO scaffold for other repos, and (2) a reusable autonomous worker runtime that runs Claude CLI in a container. See `scaffold.todo.md` and `worker.todo.md` for the large feature work. This file tracks improvements to the template system itself (commands, UX, meta-tooling).
+This repo provides a multi-layer system: (1) an installable spec / intake / TODO scaffold, (2) composable agent definitions, (3) a plugin for Claude Code, and (4) a reusable autonomous worker runtime. See `scaffold.todo.md` and `worker.todo.md` for layer-specific work. This file tracks improvements to the template system itself (commands, UX, meta-tooling).
 
 ## Sooner
 
@@ -9,11 +9,7 @@ This repo provides two products: (1) an installable spec / intake / TODO scaffol
 
 ## Backlog
 
-- Sync general-purpose improvements from work fork *(blocked: waiting for work-specific code to be stripped before sharing)*
-
 ## Ideas (Uncommitted)
-
-- When `/respec` runs in Update mode, compare the `dist/specs/spec.todo.md` template against the local TODO files. If the format differs (e.g. checkboxes vs plain bullets), offer to migrate existing TODO items to the current format. Apply only with user approval.
 
 ## Reminders
 

@@ -1,7 +1,7 @@
 # Installable Scaffold — TODOs
 
 ## Summary
-Work to build and maintain the installable scaffold payload (Layer 1): the small, friendly set of files that downstream repos copy in to adopt the spec / intake / TODO system. Includes the `dist/` generation pipeline that keeps the published output consistent.
+Work to build and maintain the installable scaffold (Layer 1): the small, friendly set of files that downstream repos copy in to adopt the spec / intake / TODO system. Scaffold templates live in `agents/templates/`.
 
 ## Reminders
 
