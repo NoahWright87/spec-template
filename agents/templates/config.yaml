@@ -1,0 +1,13 @@
+# Agent configuration for this repository.
+# Place this file at .agents/config.yaml in your repo root.
+# See: https://github.com/NoahWright87/spec-template
+version: 2
+agents:
+  - scout
+  - refine
+  - intake
+  - knock-out-todos
+settings:
+  max_open_prs: 2
+  specs_dir: specs
+  debug: false

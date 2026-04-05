@@ -14,7 +14,7 @@ The worker automatically decides what to do based on whether the target repo alr
 
 1. Clones the target repository.
 2. Checks for `specs/AGENTS.md` — the scaffold detection marker.
-3. Marker absent → **install mode**: copies the `dist/` scaffold payload into the repo, creates a `scaffold/bootstrap` branch, commits, and opens a bootstrap PR.
+3. Marker absent → **install mode**: copies scaffold templates from `agents/templates/` into the repo, creates a `scaffold/bootstrap` branch, commits, and opens a bootstrap PR.
 4. Exits. The next run (after the PR is merged) switches to operate mode automatically.
 
 ### Operate mode (subsequent runs)
@@ -169,8 +169,8 @@ The `MODEL` parameter lets you choose which Claude model the worker uses. This i
 
 **Examples:**
 ```bash
-# Use Sonnet 4.6 (good balance of speed and capability)
--e MODEL=claude-sonnet-4-6
+# Use Sonnet 4.5 (good balance of speed and capability)
+-e MODEL=claude-sonnet-4-5
 
 # Use Haiku for cost-efficient processing
 -e MODEL=claude-haiku-4-5
@@ -179,9 +179,7 @@ The `MODEL` parameter lets you choose which Claude model the worker uses. This i
 -e MODEL=claude-opus-4-6
 ```
 
-**Model validation:** When using API key mode, the worker validates model access before starting work. If the model ID is wrong or your key doesn't have access, it fails immediately with a clear error message (any non-200 response is treated as a fatal preflight failure).
-
-**Subscription mode + MODEL:** You can set `MODEL` in subscription mode too — the worker will pass `--model` to the Claude CLI. Model validation is skipped (there's no API key to validate against), but the CLI will use the specified model for the run. If the model ID is invalid, the Claude CLI will report an error when it starts.
+**Model validation:** When using API key mode, the worker validates model access before starting work. If your API key doesn't have access to the specified model, it fails quickly with a clear error message.
 
 ---
 
@@ -210,4 +208,4 @@ The worker runs as a [`CronJob`](https://kubernetes.io/docs/concepts/workloads/c
 
 ## How the image is built
 
-The image is built automatically by GitHub Actions when files in `worker/`, `scripts/`, or `dist/` change on `main`. See `.github/workflows/build-worker.yml`. The image is published to GitHub Container Registry (GHCR) and tagged with both `latest` and the commit SHA.
+The image is built automatically by GitHub Actions when files in `worker/` or `agents/` change on `main`. See `.github/workflows/build-worker.yml`. The image is published to GitHub Container Registry (GHCR) and tagged with both `latest` and the commit SHA.

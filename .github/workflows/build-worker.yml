@@ -5,14 +5,12 @@ on:
     branches: [main]
     paths:
       - 'worker/**'
-      - 'scripts/**'
-      - 'dist/**'
+      - 'agents/**'
   pull_request:
     branches: [main]
     paths:
       - 'worker/**'
-      - 'scripts/**'
-      - 'dist/**'
+      - 'agents/**'
 
 env:
   REGISTRY: ghcr.io
