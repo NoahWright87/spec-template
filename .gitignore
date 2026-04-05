@@ -1,6 +1,9 @@
 # Local Claude Code settings — machine-specific, not for sharing
 .claude/settings.local.json
 
+# macOS Finder metadata — never commit
+**/.DS_Store
+
 # Worker runtime secrets — never commit
 .env
 

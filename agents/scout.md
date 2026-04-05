@@ -8,7 +8,7 @@ Agent name: Scout
 
 ## Purpose
 
-Generate periodic progress reports based on recent repository activity. Reports summarize completed work, in-progress items, upcoming TODOs, and key metrics. The report is committed to `specs/reports/YYYY-MM-DD.md` and submitted as a PR. The agent also advances `next_report_date` in `.agents/scout/config.yaml` so the entrypoint knows when to schedule the next run.
+Generate periodic progress reports based on recent repository activity. Reports summarize completed work, in-progress items, upcoming TODOs, and key metrics. The report is committed under the configured `reports_dir` in `.agents/scout/config.yaml` (by default `docs/reports/YYYY-MM-DD.md`) and submitted as a PR. The agent also advances `next_report_date` in `.agents/scout/config.yaml` so the entrypoint knows when to schedule the next run.
 
 ## Instructions
 

@@ -4,6 +4,28 @@ This file lists the current and previous versions, along with the features that 
 
 # Versions
 
+## WIP
+
+- Add `agents/` — multi-agent architecture with composable task library (22 tasks), agent definitions (intake, refine, knock-out-todos, scout), templates, and references
+- Add `plugin/` and `.claude-plugin/` — Claude Code plugin distribution format; installable via `claude plugin install`
+- Rework worker runtime: per-agent `check.sh`/`startup.sh` scripts, GitHub App auth token generation, config v2 (`agents/config.yaml`), webhook notifications
+- Add `worker/scripts/` with `common.sh`, `github-app-token.mjs`, and per-agent check/startup scripts
+- Migrate config from `.claude/worker-config.yaml` to `.agents/config.yaml` v2 with auto-upgrade support
+- Remove `dist/`, `scaffold/worker-config.yaml`, `scripts/generate-dist.sh`, `scripts/install-scaffold.sh` — worker now installs directly from `agents/templates/`
+- Remove `/respec` command — superseded by plugin install flow
+- Add `docs/overview.md` and `docs/how-it-works.md`
+- Add `.github/workflows/agent-audit.yml` — automated security scan of agent-authored PRs
+- Add `.github/workflows/changelog-check.yml` — enforces changelog entries at release time
+- Update `README.md`, `CONTRIBUTING.md`, specs, and worker README/Dockerfile for new layering
+
+## 0.3.0
+
+- Add `worker/` — autonomous containerized runner (Dockerfile, entrypoint.sh, worker-instructions.md, README.md); cron job model with Docker volume state persistence and GHCR publishing
+- Add scaffold detection, install mode, and operate mode to the worker: checks for `specs/AGENTS.md`; if missing, copies the `dist/` payload and opens a bootstrap PR; if present, runs the repo workflows via Claude CLI
+- Add `scaffold/specs/` as the template source files for the installable scaffold payload
+- Add `scripts/generate-dist.sh` to generate `dist/` from scaffold sources and command files with auto-generated do-not-edit headers
+- Add committed `dist/` payload for direct downstream scaffold installation and worker/bootstrap flows
+
 ## 0.2.0
 
 - `/what-now` now reads the repo's current state before showing options — it checks for open PRs needing review, stale waiting items, unrefined TODOs, and more, then surfaces the most pressing options first with ⭐ labels. Saves your preference so it only asks once.

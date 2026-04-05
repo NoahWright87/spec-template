@@ -48,12 +48,12 @@ _filed=$(gh issue list \
     --json number \
     --jq '.[].number' 2>/dev/null || echo "")
 for _inum in $_filed; do
-    _last=$(gh api "repos/$TARGET_REPO/issues/$_inum/comments" \
-        --jq 'if length == 0 then "empty"
+    _last=$(gh api --paginate "repos/$TARGET_REPO/issues/$_inum/comments" \
+        2>/dev/null | jq -rs 'add // [] | if length == 0 then "empty"
               elif (last | .user.type == "User" and (.body | test("^[[:space:]]*🤖") | not))
               then "human"
               else "robot"
-              end' 2>/dev/null || echo "robot")
+              end' || echo "robot")
     debug "check-knock-out-todos: issue #$_inum last commenter: $_last"
     if [ "$_last" = "human" ]; then
         if [ "$_check_result" -eq 0 ]; then

@@ -48,7 +48,7 @@ spec:
                     secretKeyRef:
                       name: spec-worker-secrets
                       key: anthropic-api-key
-                - name: GITHUB_TOKEN
+                - name: GH_TOKEN
                   valueFrom:
                     secretKeyRef:
                       name: spec-worker-secrets

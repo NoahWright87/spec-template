@@ -28,7 +28,7 @@ fi
 
 # Signal 2: Unrefined TODOs (❓ in specs)
 _specs_dir=$(yq '.settings.specs_dir // "specs"' "$WORKER_CONFIG" 2>/dev/null || echo "specs")
-_unrefined_todo_count=$(grep -rl '^- ❓' "$WORKSPACE/$_specs_dir/"**/*.todo.md 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+_unrefined_todo_count=$(find "$WORKSPACE/$_specs_dir" -name "*.todo.md" -print0 2>/dev/null | xargs -0 grep -l '^- ❓' 2>/dev/null | wc -l | tr -d ' ' || echo "0")
 debug "check-refine: files with unrefined TODOs (❓): ${_unrefined_todo_count:-0}"
 
 if [ "$_check_result" -eq 0 ] && [ "${_unrefined_todo_count:-0}" -gt 0 ]; then

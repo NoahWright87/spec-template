@@ -123,7 +123,7 @@ kubectl create job --from=cronjob/spec-template-worker-my-repo manual-test-$(dat
 
 - Check pod logs: `kubectl logs <pod-name>`
 - Common issues:
-  - **GITHUB_TOKEN invalid:** Secret key `github-token` must be a valid PAT with repo write access
+  - **GH_TOKEN invalid:** Secret key `github-token` must be a valid PAT with repo write access
   - **ANTHROPIC_API_KEY invalid:** Secret key `anthropic-api-key` must be a valid API key
   - **Image pull error:** Ensure GHCR is accessible or mirror the image
 

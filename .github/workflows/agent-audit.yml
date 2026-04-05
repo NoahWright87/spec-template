@@ -28,6 +28,9 @@ jobs:
         with:
           fetch-depth: 0  # needed for git diff against base branch
 
+      - name: Fetch base branch for diff
+        run: git fetch origin ${{ github.base_ref }} --depth=1
+
       - name: Scan diff for suspicious patterns
         id: scan
         run: |

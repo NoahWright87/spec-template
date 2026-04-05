@@ -37,9 +37,9 @@ debug "startup-refine: ${_candidate_count} candidate issues (no intake:* label o
 # This is the structural self-talk prevention — Claude only sees issues it should act on.
 _filtered="[]"
 for _num in $(echo "$_candidates" | jq -r '.[].number'); do
-    _comments_json=$(gh api "repos/$TARGET_REPO/issues/$_num/comments" \
-        --jq '[.[] | {user: .user.login, body: .body, created_at: .created_at}]' \
-        2>/dev/null || echo "[]")
+    _comments_json=$(gh api --paginate "repos/$TARGET_REPO/issues/$_num/comments" \
+        2>/dev/null | jq -s 'add // [] | [.[] | {user: .user.login, body: .body, created_at: .created_at}]' \
+        || echo "[]")
     _comment_count=$(echo "$_comments_json" | jq 'length')
 
     if [ "$_comment_count" -eq 0 ]; then
@@ -95,7 +95,7 @@ Process all issues in this file."
 
 # ── Also note unrefined TODOs ────────────────────────────────────────────────
 _specs_dir=$(yq '.settings.specs_dir // "specs"' "$WORKER_CONFIG" 2>/dev/null || echo "specs")
-_unrefined_files=$(grep -rl '^- ❓' "$WORKSPACE/$_specs_dir/"**/*.todo.md 2>/dev/null || true)
+_unrefined_files=$(find "$WORKSPACE/$_specs_dir" -name "*.todo.md" -print0 2>/dev/null | xargs -0 grep -l '^- ❓' 2>/dev/null || true)
 _unrefined_count=$(echo "$_unrefined_files" | grep -c . 2>/dev/null || echo "0")
 
 if [ "${_unrefined_count:-0}" -gt 0 ]; then
