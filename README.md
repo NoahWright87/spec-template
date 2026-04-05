@@ -6,17 +6,17 @@ Your AI writes code. This gives it a memory.
 
 ## Quick start
 
-Paste this into your AI assistant from inside your repo:
+**Option A — Plugin install (recommended for Claude Code):**
 
 ```
-Read the file at `https://github.com/NoahWright87/spec-template/blob/main/.claude/commands/lib/respec.md` and follow its instructions to apply the spec-template system to this repository.
+claude plugin install spec-template@NoahWright87/spec-template
 ```
 
-The assistant fetches the `/respec` command, checks what already exists, and walks you through setup interactively. Nothing gets touched without your approval.
+Then run `/what-now` from inside any repo. The assistant walks you through setup interactively.
 
-**Claude users:** After setup, run `/respec` any time to pull in updates.
+**Option B — Worker auto-install (for autonomous operation):**
 
-**Other IDEs:** The same prompt works for updates too. The command files are plain markdown — paste them in or adapt them to your IDE's native format.
+Point the worker container at your repo and it will detect the missing scaffold, open a bootstrap PR with all the spec files, and switch to operate mode after you merge. See [`worker/README.md`](worker/README.md).
 
 ---
 
@@ -42,8 +42,6 @@ No team meeting required. No process overhaul.
 
 Teammates who don't use it won't notice it's there. Teammates who do get free context when they hand work to their AI. The specs accumulate quietly, and your whole team benefits over time.
 
-If you tried SpecKit and it didn't stick, this is different. SpecKit asked everyone to adopt a new process. This slides in under the workflow you already have — one engineer, one afternoon.
-
 ---
 
 ## What you get
@@ -53,7 +51,6 @@ Commands that cover the whole loop:
 | Command | What it does |
 |---------|-------------|
 | `/what-now` | **The only command you need to remember.** Assesses your repo and routes you to the right next step — all other commands are accessed through this one |
-| `/respec` | Install or update the spec system in any repo |
 | `/intake` | Sort ideas and GitHub Issues into the right TODO spec |
 | `/refine` | Add detail and effort estimates to TODO items before implementing |
 | `/knock-out-todos` | Implement open TODOs and keep specs current |
@@ -69,8 +66,8 @@ See [.claude/commands/README.md](.claude/commands/README.md) for the full comman
 | Path | Purpose |
 |------|---------|
 | `specs/` | Starter spec directory: templates, intake bucket, agent instructions |
+| `.agents/config.yaml` | Agent configuration (which agents to run, settings) |
 | `.claude/commands/what-now.md` | Entry point — assesses repo status and recommends next step |
-| `.claude/commands/lib/respec.md` | Install or update this template |
 | `.claude/commands/lib/intake.md` | File ideas into the right spec |
 | `.claude/commands/lib/refine.md` | Add detail and effort estimates to TODO items |
 | `.claude/commands/lib/knock-out-todos.md` | Implement open TODOs |
@@ -82,7 +79,7 @@ See [.claude/commands/README.md](.claude/commands/README.md) for the full comman
 
 ## Opting out
 
-Delete `specs/` and remove the command files from `.claude/commands/`. That's everything the template installed.
+Delete `specs/`, `.agents/`, and remove the command files from `.claude/commands/`. That's everything the scaffold installed.
 
 ---
 
@@ -92,7 +89,7 @@ The scaffold works on demand — you ask your AI, it helps. That's the simple pa
 
 If you want fully **autonomous operation** — Claude continuously working on its own — this repo also provides a worker container. It runs as a cron job: wakes up, clones your repo, runs intake and TODO processing, and exits. No human in the loop required.
 
-The worker supports a multi-agent architecture — each agent (intake, knock-out-todos) gets its own branch and PR, controlled by a `worker-config.yaml` in the target repo. Deploy with Docker Compose for local use or Kubernetes CronJobs for production.
+The worker supports a multi-agent architecture with four agents (intake, refine, knock-out-todos, scout) — each gets its own branch and PR, controlled by `.agents/config.yaml` in the target repo. Authentication supports both GitHub App (recommended) and PAT modes. Deploy with Docker Compose for local use or Kubernetes CronJobs for production.
 
 See [`worker/README.md`](worker/README.md) for setup and deployment instructions, or [`k8s/README.md`](k8s/README.md) for Kubernetes-specific guidance.
 

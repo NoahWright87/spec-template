@@ -4,15 +4,27 @@ This file lists the current and previous versions, along with the features that 
 
 # Versions
 
+## WIP
+
+- Add `agents/` — multi-agent architecture with composable task library (22 tasks), agent definitions (intake, refine, knock-out-todos, scout), templates, and references
+- Add `plugin/` and `.claude-plugin/` — Claude Code plugin distribution format; installable via `claude plugin install`
+- Rework worker runtime: per-agent `check.sh`/`startup.sh` scripts, GitHub App auth token generation, config v2 (`agents/config.yaml`), webhook notifications
+- Add `worker/scripts/` with `common.sh`, `github-app-token.mjs`, and per-agent check/startup scripts
+- Migrate config from `.claude/worker-config.yaml` to `.agents/config.yaml` v2 with auto-upgrade support
+- Remove `dist/`, `scaffold/worker-config.yaml`, `scripts/generate-dist.sh`, `scripts/install-scaffold.sh` — worker now installs directly from `agents/templates/`
+- Remove `/respec` command — superseded by plugin install flow
+- Add `docs/overview.md` and `docs/how-it-works.md`
+- Add `.github/workflows/agent-audit.yml` — automated security scan of agent-authored PRs
+- Add `.github/workflows/changelog-check.yml` — enforces changelog entries at release time
+- Update `README.md`, `CONTRIBUTING.md`, specs, and worker README/Dockerfile for new layering
+
 ## 0.3.0
 
-- **Multi-agent worker architecture**: the worker now runs independent agents (`intake`, `knock-out-todos`) as separate Claude CLI sessions, each with its own branch and PR. Controlled by `.claude/worker-config.yaml` in the target repo (`max_open_prs`, `agents` list).
-- **`MODEL` environment variable**: choose which Claude model the worker uses (`claude-sonnet-4-6`, `claude-haiku-4-5`, etc.). Model access is validated at preflight (API key mode); any non-200 response is a hard failure with targeted troubleshooting hints. Subscription mode passes `--model` to the CLI without validation.
-- **Docker Compose + `.env.example`**: `docker-compose.yml` (published image) and `docker-compose.local.yml` (local build) for one-command local runs. `.env.example` provided as a setup template.
-- **`run-worker.sh` helper**: shell script that loads `.env`, auto-detects auth mode (API key vs subscription credentials file), and builds the `docker run` command.
-- **Kubernetes deployment (Kustomize)**: `k8s/` directory with base CronJob template and per-repo overlays. Includes Docker Desktop quickstart, subscription mode `hostPath` mount docs, and horizontal scaling guidance.
-- **Dockerfile**: switched from `node:20-slim` + manual `gh` install to `node:20-alpine` + `apk`. Replaced `yq` with `python3` for YAML parsing (no external binary download at build time).
-- **Fixes**: `_open_pr_count` initializes to `0`; only increments after verifying agent opened a PR. Agent preamble fetches before checkout; uses `TARGET_BRANCH` for merge-to-resolve-conflicts.
+- Add `worker/` — autonomous containerized runner (Dockerfile, entrypoint.sh, worker-instructions.md, README.md); cron job model with Docker volume state persistence and GHCR publishing
+- Add scaffold detection, install mode, and operate mode to the worker: checks for `specs/AGENTS.md`; if missing, copies the `dist/` payload and opens a bootstrap PR; if present, runs the repo workflows via Claude CLI
+- Add `scaffold/specs/` as the template source files for the installable scaffold payload
+- Add `scripts/generate-dist.sh` to generate `dist/` from scaffold sources and command files with auto-generated do-not-edit headers
+- Add committed `dist/` payload for direct downstream scaffold installation and worker/bootstrap flows
 
 ## 0.2.0
 

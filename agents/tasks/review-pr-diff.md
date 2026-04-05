@@ -1,0 +1,174 @@
+# Review PR Diff
+
+## Purpose
+
+Self-review a PR's diff, batch-fix issues, leave explanatory comments, and respond to reviewer/bot comments. Follow these steps any time a PR is opened or updated.
+
+## Preconditions
+
+- A PR exists for the current branch.
+
+## Steps
+
+### PR Description
+
+A good PR description guides reviewers and helps them feel confident approving. Before reviewing the diff, make sure the description is in good shape:
+
+- **Keep it high-level** — focus on *what* changed and *why*, not implementation details. Reviewers care about what the software does, not how it does it.
+- **Include screenshots** for any new or changed UI. Link or embed them directly in the description.
+- **Keep it in sync** — as you respond to comments and make changes, re-read the description and update it if the PR has drifted from what it says.
+
+---
+
+### Step 1 — Self-review
+
+First, check for merge conflicts:
+
+```
+gh api repos/{owner}/{repo}/pulls/<number> --jq '.mergeable_state'
+```
+
+If `mergeable_state` is `"dirty"`, resolve conflicts before reviewing the diff.
+(Note: GitHub computes mergeability asynchronously — `"unknown"` means it's still computing. Wait a moment and re-check.)
+
+```
+git fetch origin <base-branch>
+git merge origin/<base-branch>
+# resolve conflicts, keeping only this PR's intended changes
+git add <files>
+git commit -m "merge: sync with <base-branch>"
+git push
+```
+
+Merging (rather than rebasing) keeps the commit history readable and avoids surfacing other branches' changes in this PR's diff.
+
+Then read the full diff:
+
+```
+gh pr diff
+```
+
+Review it as you would a stranger's PR. Look for:
+- Logic errors, edge cases, or missing error handling
+- Code that is harder to read than it needs to be
+- Missing or wrong spec/CHANGELOG updates
+- `CHANGELOG.md` is missing a version number for this PR's work (should have one, not just `## WIP`)
+- Anything that would make a reviewer pause or ask a question
+
+**Collect all issues before fixing any.** Do not context-switch into fixing the first problem you find — finish the full review, write down every issue, then fix them all together in Step 2.
+
+---
+
+### Step 2 — Batch-fix and commit
+
+Fix everything found in Step 1 in a single pass. Then commit and push as **one commit**.
+
+Reason: each push re-triggers auto-reviewers like Copilot. Batching prevents a flood of redundant review runs.
+
+```
+git add <files>
+git commit -m "self-review fixes: <brief summary>"
+git push
+```
+
+If there is nothing to fix, skip this step.
+
+---
+
+### Step 3 — Leave explanatory PR comments
+
+Walk through the diff again. For changes that may confuse a reviewer, add a comment to explain. The goal is context about **the change**, not documentation about the code.
+
+**When a PR comment makes sense:**
+- A large block of code "changed" but the only change was moving or renaming — explain that no logic changed
+- Code was deleted — explain why it was safe to delete (last consumer gone, endpoint deprecated, etc.)
+- A non-obvious fix — explain what was broken, why, and how the new code avoids it
+- A decision was made during this PR that isn't captured anywhere else (e.g., "went with approach A over B because…")
+- The change requires context about something external (traffic spike, deprecation schedule, upstream change)
+
+**When a code comment makes sense instead:**
+- The context will still matter to someone reading the code 6 months from now in isolation
+- A business rule, API quirk, or non-obvious constraint future maintainers will trip over
+
+**When no comment is needed:**
+- The PR description already covers it
+- The change is self-evident from the diff
+
+**Placement:**
+- File-level comment: use when the explanation applies to the whole file's change (e.g., file moved, file deleted)
+- Line-level comment: use when the explanation is about a specific hunk
+- PR-level comment: use for overall context that doesn't map to any single file
+
+Post comments using:
+```
+# PR-level comment
+gh pr comment <number> --body "🤖 Claude ($AGENT_NAME): [explanation]"
+
+# File/line-level review comment (inline on the diff)
+gh api repos/{owner}/{repo}/pulls/{number}/comments \
+  --method POST \
+  -f commit_id="$(gh pr view <number> --json headRefOid -q .headRefOid)" \
+  -f path="<file>" \
+  -f line=<line> \
+  -f side="RIGHT" \
+  -f body="🤖 Claude ($AGENT_NAME): [explanation]"
+```
+
+All comments must start with **`🤖 Claude ($AGENT_NAME):`**.
+
+---
+
+### Step 4 — Respond to review comments
+
+Fetch all review comments (use `--paginate` to ensure you get ALL comments, not just the first page):
+
+```
+gh api --paginate repos/{owner}/{repo}/pulls/<number>/comments
+```
+
+Also fetch review summaries:
+
+```
+gh pr view <number> --json reviews
+```
+
+For each unresolved comment from reviewers (both humans and bots like Copilot):
+
+**IMPORTANT:** Skip any comments that start with 🤖 — those are from you or other agents. Do not respond to your own comments.
+
+For each comment from others:
+
+1. **If the comment is valid:** Fix the issue (batch with any other pending fixes — see Step 2 note), then reply explaining what was done.
+2. **If the comment is not applicable:** Reply explaining why (politely push back with reasoning).
+3. **Need clarification:** Ask a follow-up question in a reply.
+4. After replying, resolve the thread.
+
+**Note on human vs bot comments:** When humans and bots disagree, human opinion takes precedence. Bots may not be aware of project-specific context or intent that humans understand.
+
+Never leave a non-🤖 comment unacknowledged.
+
+After responding to all comments, if you made additional fixes: commit and push them as a single batch (same reason as Step 2 — avoid re-triggering auto-review per push).
+
+---
+
+## Reminders
+
+- **ALL comments you post must start with 🤖** — this identifies automated comments to human reviewers and lets you find your own comments easily
+- **NEVER respond to comments that start with 🤖** — those are from you or other agents. Skip them entirely to avoid talking to yourself
+- Use `$AGENT_NAME` to express the specific agent persona (e.g., `intake`, `knock-out-todos`) — do not change the `🤖 Claude` prefix
+- **Batch all code fixes into one commit before pushing** — never push fix-by-fix
+- **Respond to every non-🤖 comment** — unacknowledged comments signal you ignored the feedback
+- Resolve a thread only after your response is posted — not before
+- In headless mode, if a human comment requires a judgment call you cannot make: post a 🤖 question to the PR thread and leave it open
+
+## Inputs
+
+- PR number
+- PR diff (via `gh pr diff`)
+- Review comments (via `gh api`)
+
+## Outputs
+
+- All self-review issues fixed in a single commit.
+- Explanatory comments posted on non-obvious changes.
+- All reviewer comments responded to.

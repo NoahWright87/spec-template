@@ -64,7 +64,6 @@ If Step 1 did not run (on_demand mode), present the static menu in default order
 | Add detail to TODO items | Clarify vague TODOs, add effort estimates (XS–XL), and open a PR with proposed spec updates | `.claude/commands/lib/refine.md` |
 | Implement TODO items | Pick the easiest open TODO items and implement them | `.claude/commands/lib/knock-out-todos.md` |
 | Backfill specs from existing code | Generate spec files from an existing codebase; mark gaps with `> **TODO:**` for later | `.claude/commands/lib/spec-backfill.md` |
-| Install or update the spec system | Set up this template in a new repo or pull in upstream updates | `.claude/commands/lib/respec.md` |
 | 🔍 Assess repo status *(on_demand mode only)* | Run a status check and re-present this menu with recommendations | *(run Step 1, then Step 2 again)* |
 
 Once the user selects an option, read the corresponding command file and follow it exactly. Do not load any command file until the user has made their choice — only read the one they pick.

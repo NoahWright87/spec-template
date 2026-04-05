@@ -17,7 +17,6 @@ The idea: **ideas go in, specs come out, code follows specs.** The commands hand
 | Command | What it does |
 |---------|--------------|
 | `/what-now` | Not sure where to start? Assesses your repo and recommends the right next step |
-| `/respec` | Install or update the spec system in any repo |
 | `/intake` | Sort ideas and GitHub Issues into the right TODO spec |
 | `/refine` | Add detail and effort estimates to TODO items before implementing |
 | `/knock-out-todos` | Implement TODO items from spec files |

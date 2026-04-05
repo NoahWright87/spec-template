@@ -6,91 +6,77 @@
 
 ## Purpose
 
-Layer 2 of the spec-template system — completely optional. A Docker container that runs Claude CLI autonomously against a target repo on a cron schedule. It wakes up, clones the repo, runs the intake and TODO workflow, and exits.
+Layer 3 of the spec-template system — completely optional. A Docker container that runs Claude CLI autonomously against a target repo on a cron schedule. It wakes up, clones the repo, runs agents, and exits.
 
 ## Inputs
 
-**Authentication (choose one — never bake into image):**
-- **Option A — Claude Code subscription:** omit `ANTHROPIC_API_KEY`; mount host `~/.claude` into the container (`-v ~/.claude:/home/worker/.claude:ro`) so the CLI uses OAuth credentials from `claude login`. Requires credentials stored as `~/.claude/.credentials.json` — macOS/Windows store tokens in the OS keychain by default, so Option B is usually easier on those platforms.
-- **Option B — Anthropic API key:** set `ANTHROPIC_API_KEY`; uses the pay-per-token API at api.anthropic.com
+**Claude authentication (choose one — never bake into image):**
+- **Option A — Anthropic API key:** set `ANTHROPIC_API_KEY`; uses the pay-per-token API
+- **Option B — Claude Code subscription:** omit `ANTHROPIC_API_KEY`; mount host `~/.claude` into the container so the CLI uses OAuth credentials
 
-**Always required:**
-- `GITHUB_TOKEN` — GitHub personal access token or app token (repo read/write + issues + PRs)
+**GitHub authentication (choose one):**
+- **Option A — GitHub App (recommended):** set `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_APP_INSTALLATION_ID`
+- **Option B — Personal Access Token:** set `GH_TOKEN`
 
-**Runtime parameters:** `TARGET_REPO` (required), `TARGET_BRANCH` (default: `main`), `CLAUDE_CONFIG_PATH` (default: `.claude`), `MAX_TODOS` (default: `1`)
+**Runtime parameters:** `TARGET_REPO` (required), `TARGET_BRANCH` (default: `main`), `MODEL` (optional), `WORKER_DEBUG` (optional)
 
 ## Outputs
 
 - Commits and PRs in the target repo from autonomous Claude runs
 - GitHub issues labeled and routed
 - TODOs implemented, specs updated
+- Progress reports (scout agent)
 
 ## Behavior
 
 ### Container contents
 
-`worker/Dockerfile` is built on `node:20-slim` and includes:
+`worker/Dockerfile` is built on `node:20-alpine` and includes:
 - Claude Code CLI (`@anthropic-ai/claude-code`, pinned version)
-- GitHub CLI (`gh`)
-- Git, curl, jq, rsync
+- GitHub CLI (`gh`), yq (YAML parser)
+- Git, curl, jq
 
 ### Execution flow (`entrypoint.sh`)
 
-1. Validate required env vars (`GITHUB_TOKEN`, `TARGET_REPO`); detect auth mode: API key (`ANTHROPIC_API_KEY` set) or subscription (`~/.claude/.credentials.json` present) — exits with a helpful message if neither is satisfied
-2. Write `~/.claude/settings.json` with full tool permissions (always overwritten so copied/mounted files can't block Claude's tools)
-3. Pre-flight checks: GitHub token validity + push permission, Claude CLI binary present
-4. Clone target repo, or `fetch` + `reset --hard` for updates; configure git identity
-5. **Scaffold detection:** check for `specs/AGENTS.md` in the workspace
-6. **Install mode** (marker absent): copy `/worker/dist/` into workspace → create `scaffold/bootstrap` branch → commit → push → open bootstrap PR → exit
-7. **Operate mode — activity check** (marker present): query GitHub for triggering activity via four conditions (no open worker PR, human comments on worker PR, unprocessed issues without intake labels, filed issues whose last comment is human); if none are true, exit early without invoking Claude (no tokens consumed)
-8. **Operate mode — run** (marker present, activity detected): invoke Claude CLI non-interactively with worker instructions + injected `MAX_TODOS` / `TARGET_REPO` parameters → tee to `/worker/state/last-run.log` → exit
+1. Validate required env vars; detect GitHub auth mode (App → PAT fallback)
+2. Detect Claude auth mode (API key or subscription credentials)
+3. Write `~/.claude/settings.json` with full tool permissions
+4. Pre-flight checks: model access validation, GitHub token validity + push permission, Claude CLI binary
+5. Clone target repo, or `fetch` + `reset --hard` for updates; configure git identity
+6. **Scaffold detection:** check for `.agents/config.yaml` or `specs/AGENTS.md`
+7. **Install mode** (no scaffold): copy templates from `agents/templates/` → create `scaffold/bootstrap` branch → commit → push → open bootstrap PR → exit
+8. **Operate mode** (scaffold present): read `.agents/config.yaml` for agent list → auto-upgrade config if needed → run per-agent check/startup scripts → invoke Claude CLI for each agent with situation report
 
-### Scaffold detection
+### Multi-agent architecture
 
-`specs/AGENTS.md` is the canonical marker. It is distinctive to the scaffold and reliably absent from unscaffolded repos. The check is explicit and runs before any workflow logic.
+Each agent gets its own branch (`worker/{agent-name}/YYYY-MM-DD`) and PR. The entrypoint:
+- Reads `.agents/config.yaml` from the target repo for agent list and settings
+- Runs per-agent `check.sh` scripts to determine if work exists
+- Runs per-agent `startup.sh` scripts to gather context (issues, eligible TODOs, etc.)
+- Builds a situation report (PR state, comments, conflicts, startup data) prepended to the agent prompt
+- Enforces dual PR caps (per-agent and fleet-wide `max_open_prs`)
 
-### Install mode
+### Config v2
 
-- Branch name: `scaffold/bootstrap` (deterministic — stale branches from closed PRs are cleaned up before each attempt)
-- Open PR check: if a bootstrap PR is already open, the run exits early without creating a duplicate
-- File copy: `rsync --ignore-existing` — non-destructive, preserves any existing files in the target repo
-- PR title: "Install spec-template scaffold"; includes installed file list, next steps, and a link to the source repo
+`.agents/config.yaml` controls the agent fleet. Auto-upgraded from v1 by `upgrade_config()` in `common.sh`.
 
-### Activity check (operate mode)
+### Activity detection
 
-Before invoking Claude, the entrypoint runs lightweight `gh` API calls to determine whether there is work to do. Claude is invoked if **any** of the following are true:
-
-| Condition | Query | Triggers when |
-|-----------|-------|---------------|
-| No open worker PR | `gh pr list` filtered to `worker/*` branches | No PR exists — TODOs may be waiting |
-| Human comments on worker PR | PR + issue comments, filtered to `user.type == "User"` and body not `🤖`-prefixed | Reviewer left feedback |
-| Unprocessed issues | `gh issue list` filtered to issues lacking all intake labels | New issues need routing |
-| Filed issue with human last comment | Most recent comment on each `intake:filed` issue | User replied to a filed issue |
-
-If none are true, the run exits without calling Claude (no tokens consumed). "Human" is defined as `user.type == "User"` AND body does not start with `🤖` — this works whether the worker runs as the same user (personal PAT, where the 🤖 prefix is the sole discriminator) or as a separate service account.
-
-### Operate mode
-
-The worker creates a dated branch (`worker/YYYY-MM-DD`) before touching any files, runs the intake + knock-out-todos workflow via Claude CLI, then opens a PR. State persists between runs in a Docker volume mounted at `/worker/state`.
-
-### Worker instructions
-
-Defined in `worker/worker-instructions.md` (baked into image). Target repos can override with `.claude/worker-instructions.md` — the entrypoint checks for this file before falling back to the image's built-in instructions.
+Per-agent `check.sh` scripts (v2) determine whether each agent should run. Agents with no work are skipped — no tokens consumed. Each agent type has its own signals (unprocessed issues for intake, unrefined TODOs for refine, etc.).
 
 ### CI/CD
 
-`.github/workflows/build-worker.yml` builds and publishes the worker image to GHCR (`ghcr.io/noahwright87/spec-template-worker`) when files in `worker/`, `scripts/`, or `dist/` change on `main`. Tagged with commit SHA and `latest`.
+`.github/workflows/build-worker.yml` builds and publishes the worker image to GHCR (`ghcr.io/noahwright87/spec-template-worker`) when files in `worker/` or `agents/` change on `main`. Tagged with commit SHA and `latest`.
 
 ## User Experience
 
-Worker operators run `docker run` with injected secrets and `TARGET_REPO`. Schedule via cron or Kubernetes `CronJob`. See `worker/README.md` for the full reference.
+Worker operators run `docker compose up` with injected secrets and `TARGET_REPO`. Schedule via cron or Kubernetes `CronJob`. See `worker/README.md` for the full reference.
 
 ## Acceptance
 
-- Worker container starts, clones a target repo, detects scaffold presence, and runs the appropriate mode (install or operate)
-- Install mode: opens a bootstrap PR with the `dist/` payload; subsequent runs switch to operate mode automatically after the PR is merged
-- Operate mode (activity check): runs four `gh` API conditions; exits without invoking Claude if none are true (no tokens consumed)
-- Operate mode (PR mode): when an open `worker/*` PR exists, Claude replies to human comments only — no new TODO implementations until the PR is merged
-- Operate mode (fresh run): Claude runs intake + up to `MAX_TODOS` TODO implementations; opens a PR
-- `build-worker.yml` triggers on pushes to `worker/`, `scripts/`, and `dist/`; publishes to GHCR
-- Target repos can override worker instructions by placing `.claude/worker-instructions.md` in the repo
+- Worker container starts, clones a target repo, detects scaffold presence, and runs the appropriate mode
+- Install mode: opens a bootstrap PR with scaffold templates; subsequent runs switch to operate mode after merge
+- Operate mode: each agent checks for work independently; skips with no tokens consumed if no signals
+- Per-agent PRs: each agent gets its own branch and PR; situation report provides pre-fetched context
+- `build-worker.yml` triggers on pushes to `worker/` and `agents/`; publishes to GHCR
+- Target repos can override task files via `.agents/overrides/`
