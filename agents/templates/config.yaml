@@ -7,6 +7,7 @@ agents:
   - refine
   - intake
   - knock-out-todos
+  - bard
 settings:
   max_open_prs: 2
   specs_dir: specs

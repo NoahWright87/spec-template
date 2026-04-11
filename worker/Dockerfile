@@ -9,7 +9,7 @@ RUN apk add --no-cache \
     github-cli
 
 # ── Claude Code CLI ────────────────────────────────────────────────────────────
-RUN npm install -g @anthropic-ai/claude-code@2.1.71
+RUN npm install -g @anthropic-ai/claude-code@2.1.71 tsx
 
 # ── yq (YAML parser for agent config) ──────────────────────────────────────
 ARG YQ_VERSION=v4.44.1

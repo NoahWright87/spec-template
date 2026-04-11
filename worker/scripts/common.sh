@@ -128,6 +128,7 @@ read_agent_config() {
     export SCOUT_NEXT_REPORT_DATE=""
     export SCOUT_REPORT_INTERVAL=14
     export SCOUT_REPORT_INSTRUCTIONS="templates/report-technical.md"
+    export BARD_NEXT_RUN_DATE=""
 
     if [ "$_config_version" -lt 2 ]; then
         debug "Config version $_config_version < 2 — using hardcoded defaults for '$agent'"
@@ -197,6 +198,15 @@ read_agent_config() {
             SCOUT_REPORT_INTERVAL=$(yq '.report_interval_days // 14' "$agent_config")
             SCOUT_REPORT_INSTRUCTIONS=$(yq '.report_instructions // "templates/report-technical.md"' "$agent_config")
             export SCOUT_NEXT_REPORT_DATE SCOUT_REPORT_INTERVAL SCOUT_REPORT_INSTRUCTIONS
+            ;;
+        bard)
+            BARD_NEXT_RUN_DATE=$(yq '.next_run_date // ""' "$agent_config")
+            BARD_AGENTS_PER_RUN=$(yq '.agents_per_run // 2' "$agent_config")
+            BARD_PHRASES_PER_AGENT=$(yq '.phrases_per_agent // 2' "$agent_config")
+            BARD_SELECTION_STRATEGY=$(yq '.agent_selection_strategy // "least_populated"' "$agent_config")
+            BARD_SUGGESTION_LABEL=$(yq '.suggestion_label // "bard/suggestion"' "$agent_config")
+            export BARD_NEXT_RUN_DATE BARD_AGENTS_PER_RUN BARD_PHRASES_PER_AGENT \
+                   BARD_SELECTION_STRATEGY BARD_SUGGESTION_LABEL
             ;;
     esac
 
