@@ -1,3 +1,7 @@
+# NOTE: This workflow will be replaced by reports.yml once the
+# NoahWright87/repo-report composite action is available (see docs/reports/SETUP.md).
+# At that point, reports.yml handles docs + specs + the reports app in one deployment.
+# Until then, this workflow keeps docs/specs publishing while reports.yml is a no-op.
 name: Publish docs to GitHub Pages
 
 on:
