@@ -53,7 +53,7 @@ The file configured as \`report_instructions\` in \`.agents/scout/config.yaml\` 
 \`$_rel_path\`
 
 Either update \`report_instructions\` in \`.agents/scout/config.yaml\` to use a bundled template
-(\`templates/report-technical.md\`, \`templates/report-stakeholder.md\`), or create the missing
+(\`templates/report-technical.md\`, \`templates/report-summary.md\`), or create the missing
 file at \`.agents/scout/$_rel_path\` and commit it."
                     return 0
                 fi
@@ -99,14 +99,14 @@ echo "[worker]   Startup: Report date: $_today, next: $_next_report_date"
 # ── Determine baseline (diff range start) ───────────────────────────────────
 _baseline_commit=""
 _baseline_date=""
-_specs_dir=$(yq '.settings.specs_dir // "specs"' "$WORKER_CONFIG" 2>/dev/null || echo "specs")
 
-# Look for the most recent report file
-_last_report=$(ls "$WORKSPACE/$SCOUT_REPORTS_DIR/"*.md 2>/dev/null | sort | tail -1 || true)
+# Look for the most recent report directory (YYYY-MM-DD/data.json)
+_last_report_dir=$(ls -d "$WORKSPACE/$SCOUT_REPORTS_DIR/"*/ 2>/dev/null | sort | tail -1 || true)
+_last_report_json="${_last_report_dir}data.json"
 
-if [ -n "$_last_report" ]; then
-    _baseline_commit=$(git -C "$WORKSPACE" log --diff-filter=A --format=%H -- "$_last_report" 2>/dev/null | head -1 || true)
-    _baseline_date=$(basename "$_last_report" .md)
+if [ -n "$_last_report_dir" ] && [ -f "$_last_report_json" ]; then
+    _baseline_commit=$(git -C "$WORKSPACE" log --diff-filter=A --format=%H -- "$_last_report_json" 2>/dev/null | head -1 || true)
+    _baseline_date=$(basename "${_last_report_dir%/}")
     echo "[worker]   Startup: Baseline from last report: $_baseline_date (commit: ${_baseline_commit:-unknown})"
 fi
 
@@ -158,12 +158,10 @@ _new_issues_count=$(echo "$_open_issues" | jq 'length' 2>/dev/null || echo "0")
 _closed_issues_count=$(echo "$_closed_issues" | jq 'length' 2>/dev/null || echo "0")
 _merged_prs_count=$(echo "$_merged_prs" | jq 'length' 2>/dev/null || echo "0")
 
-# ── Gather TODO status ───────────────────────────────────────────────────────
-_refined_count=$(grep -r '^- 💎' "$WORKSPACE/$_specs_dir/"**/*.todo.md 2>/dev/null | wc -l | tr -d ' ' || echo "0")
-_unrefined_count=$(grep -r '^- ❓' "$WORKSPACE/$_specs_dir/"**/*.todo.md 2>/dev/null | wc -l | tr -d ' ' || echo "0")
-_waiting_count=$(grep -r '^- ⏳' "$WORKSPACE/$_specs_dir/"**/*.todo.md 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+# ── Count filed issues (intake:filed label) ──────────────────────────────────
+_intake_count=$(echo "$_open_issues" | jq '[.[] | select(.labels[]?.name == "intake:filed")] | length' 2>/dev/null || echo "0")
 
-echo "[worker]   Startup: PRs merged: $_merged_prs_count, issues closed: $_closed_issues_count, TODOs: 💎$_refined_count ❓$_unrefined_count ⏳$_waiting_count"
+echo "[worker]   Startup: PRs merged: $_merged_prs_count, issues closed: $_closed_issues_count, open: $_new_issues_count, intake:filed: $_intake_count"
 
 # ── Write data to files for agent consumption ────────────────────────────────
 mkdir -p /tmp/scout-data
@@ -189,8 +187,9 @@ do not re-fetch from GitHub or git.
 **Summary metrics:**
 - PRs merged: ${_merged_prs_count}
 - Issues closed: ${_closed_issues_count}
+- Open PRs: $(echo "$_open_prs" | jq 'length' 2>/dev/null || echo "0")
 - Open issues: ${_new_issues_count}
-- TODOs: 💎 ${_refined_count} (refined) | ❓ ${_unrefined_count} (unrefined) | ⏳ ${_waiting_count} (waiting)
+- Filed issues (intake:filed): ${_intake_count}
 
 **Data files (read these for details):**
 - \`/tmp/scout-data/git-log.txt\` — commit log since baseline
@@ -198,7 +197,7 @@ do not re-fetch from GitHub or git.
 - \`/tmp/scout-data/merged-prs.json\` — recently merged PRs with descriptions
 - \`/tmp/scout-data/closed-issues.json\` — recently closed issues
 - \`/tmp/scout-data/open-prs.json\` — currently open PRs
-- \`/tmp/scout-data/open-issues.json\` — currently open issues
+- \`/tmp/scout-data/open-issues.json\` — currently open issues (filter for \`intake:filed\` label for Upcoming theme)
 
 **Date advancement:** After generating the report, update \`.agents/scout/config.yaml\`
 with \`next_report_date: \"${_next_report_date}\"\`. Commit both the report and the
