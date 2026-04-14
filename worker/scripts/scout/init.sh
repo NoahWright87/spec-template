@@ -88,10 +88,11 @@ fi
 _workflow_file="$WORKSPACE/.github/workflows/reports.yml"
 if [ ! -f "$_workflow_file" ]; then
     mkdir -p "$WORKSPACE/.github/workflows"
-    # Derive base_url from repo name (TARGET_REPO = owner/repo → /repo).
+    # Derive base_url from repo name (TARGET_REPO = owner/repo → /repo/).
+    # Trailing slash is required for Vite's base option.
     # For a root Pages repo (username.github.io), set base_url to / manually.
     _repo_name="${TARGET_REPO#*/}"
-    _base_url="/${_repo_name}"
+    _base_url="/${_repo_name}/"
     _reports_path="${SCOUT_REPORTS_DIR:-docs/reports}"
     cat > "$_workflow_file" <<EOF
 name: Publish Scout Reports
@@ -134,6 +135,7 @@ jobs:
           branch: gh-pages
           folder: _site
           clean: true
+          clean-exclude: pr-preview
 
       - name: Deploy preview
         if: github.event_name == 'pull_request'
