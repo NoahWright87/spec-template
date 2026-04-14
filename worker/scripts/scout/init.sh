@@ -65,4 +65,61 @@ EOF
     echo "[worker]   Scout init: wrote NOTES.md"
 fi
 
+# ── Create GH Pages workflow (only if missing) ───────────────────────────
+_workflow_file="$WORKSPACE/.github/workflows/reports.yml"
+if [ ! -f "$_workflow_file" ]; then
+    mkdir -p "$WORKSPACE/.github/workflows"
+    # Derive base_url from repo name (TARGET_REPO = owner/repo → /repo).
+    # For a root Pages repo (username.github.io), set base_url to / manually.
+    _repo_name="${TARGET_REPO#*/}"
+    _base_url="/${_repo_name}"
+    cat > "$_workflow_file" <<EOF
+name: Publish Scout Reports
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '${SCOUT_REPORTS_DIR:-docs/reports}/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build reports app
+        uses: NoahWright87/repo-report/.github/actions/build-reports@v1
+        with:
+          reports_path: ${SCOUT_REPORTS_DIR:-docs/reports}
+          output_path: _site
+          base_url: ${_base_url}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: \${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+EOF
+    echo "[worker]   Scout init: wrote .github/workflows/reports.yml"
+fi
+
 echo "[worker]   Scout init: .agents/scout/ ready (missing files filled in)"

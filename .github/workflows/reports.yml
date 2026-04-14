@@ -1,16 +1,5 @@
 name: Publish Scout Reports
 
-# Triggers whenever Scout commits a new report JSON.
-# Builds the repo-report React app using THIS repo's data and deploys it to GH Pages.
-#
-# DEPENDS ON: NoahWright87/repo-report/.github/actions/build-reports@v1
-# That composite action does not exist yet — see docs/reports/SETUP.md for
-# instructions to create it in the repo-report repo.
-#
-# REPLACES: pages.yml — once this workflow is working, pages.yml should be
-# removed. This workflow passes `additional_static_dirs: docs,specs` so the
-# existing docs/specs content continues to be published alongside the reports app.
-
 on:
   push:
     branches: [main]
