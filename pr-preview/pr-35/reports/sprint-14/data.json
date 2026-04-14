@@ -1,0 +1,448 @@
+{
+  "meta": {
+    "title": "Sprint 14 Report",
+    "team": "Platform Team",
+    "dateRange": {
+      "start": "2026-03-10",
+      "end": "2026-03-24"
+    },
+    "repos": [
+      { "name": "atlas-web", "url": "https://github.com/acme/atlas-web" },
+      { "name": "atlas-api", "url": "https://github.com/acme/atlas-api" },
+      { "name": "atlas-shared", "url": "https://github.com/acme/atlas-shared" },
+      { "name": "atlas-infra", "url": "https://github.com/acme/atlas-infra" }
+    ],
+    "generatedAt": "2026-03-24T18:30:00Z",
+    "contact": [
+      { "text": "Slack: #platform-team", "url": "https://acme.slack.com/channels/platform-team" },
+      { "text": "On-call: PagerDuty rotation", "url": "https://acme.pagerduty.com/teams/platform" },
+      { "text": "Email: platform@acme.internal" }
+    ]
+  },
+  "summary": {
+    "type": "summary",
+    "slug": "summary",
+    "title": "Sprint 14 Overview",
+    "subtitle": "Platform Team — Mar 10–24, 2026",
+    "stats": [
+      { "label": "Deployments", "value": 14, "change": 17, "icon": "🚀" },
+      { "label": "Velocity", "value": "68 pts", "change": 6, "icon": "⚡" },
+      { "label": "Incidents", "value": 1, "icon": "🔥" },
+      { "label": "Test Pass Rate", "value": "94%", "change": 8, "icon": "✅" }
+    ],
+    "highlights": [
+      "Auth overhaul shipped — OAuth2 PKCE flow live in production",
+      "Bundle size reduced 34% through lazy loading and code splitting",
+      "CI/CD pipeline 58% faster with parallelized test suites",
+      "API rate limiting deployed to staging, production next sprint",
+      "Design system migration at 60% — 40 of 67 components done"
+    ],
+    "detailBlocks": [
+      {
+        "type": "contributor-list",
+        "title": "Team Activity",
+        "contributors": [
+          {
+            "name": "Sarah Chen",
+            "username": "schen",
+            "commits": 45,
+            "prsOpened": 8,
+            "prsMerged": 7,
+            "linesAdded": 3420,
+            "linesRemoved": 1205
+          },
+          {
+            "name": "Priya Patel",
+            "username": "ppatel",
+            "commits": 52,
+            "prsOpened": 7,
+            "prsMerged": 6,
+            "linesAdded": 4100,
+            "linesRemoved": 890
+          },
+          {
+            "name": "Marcus Rivera",
+            "username": "mrivera",
+            "commits": 38,
+            "prsOpened": 5,
+            "prsMerged": 5,
+            "linesAdded": 2850,
+            "linesRemoved": 1640
+          },
+          {
+            "name": "James Wong",
+            "username": "jwong",
+            "commits": 22,
+            "prsOpened": 3,
+            "prsMerged": 3,
+            "linesAdded": 1180,
+            "linesRemoved": 420
+          }
+        ]
+      },
+      {
+        "type": "chart",
+        "title": "Commit Activity Over Sprint",
+        "chartType": "area",
+        "xAxisLabel": "Day",
+        "yAxisLabel": "Commits",
+        "series": [
+          {
+            "name": "Commits",
+            "data": [
+              { "x": "Mar 10", "y": 8 },
+              { "x": "Mar 11", "y": 14 },
+              { "x": "Mar 12", "y": 18 },
+              { "x": "Mar 13", "y": 12 },
+              { "x": "Mar 14", "y": 6 },
+              { "x": "Mar 15", "y": 2 },
+              { "x": "Mar 16", "y": 1 },
+              { "x": "Mar 17", "y": 15 },
+              { "x": "Mar 18", "y": 22 },
+              { "x": "Mar 19", "y": 19 },
+              { "x": "Mar 20", "y": 16 },
+              { "x": "Mar 21", "y": 10 },
+              { "x": "Mar 22", "y": 3 },
+              { "x": "Mar 23", "y": 7 },
+              { "x": "Mar 24", "y": 4 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "themes": [
+    {
+      "type": "theme",
+      "slug": "auth-overhaul",
+      "title": "Auth Overhaul",
+      "status": "completed",
+      "progress": {
+        "items": [
+          { "text": "Migrated login flow to OAuth2 PKCE", "link": "https://github.com/acme/atlas-web/pull/142" },
+          { "text": "Implemented refresh token rotation" },
+          { "text": "Updated all protected route middleware" },
+          { "text": "Added session management UI" }
+        ]
+      },
+      "problems": {
+        "items": [
+          { "text": "Token invalidation race condition on mobile Safari", "link": "https://github.com/acme/atlas-web/pull/148" },
+          { "text": "2-day delay from auth provider outage (resolved)" }
+        ]
+      },
+      "plans": {
+        "items": [
+          { "text": "Monitor error rates for one sprint before removing old auth" },
+          { "text": "Write migration guide for downstream teams" },
+          { "text": "Add SSO support for enterprise customers" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "metric",
+          "title": "Auth Performance",
+          "metrics": [
+            { "label": "Login Latency (P95)", "value": 180, "previousValue": 420, "unit": "ms", "trend": "down", "source": "NewRelic" },
+            { "label": "Auth Errors/hr", "value": 2.1, "previousValue": 8.7, "trend": "down", "source": "Datadog" },
+            { "label": "Session Duration", "value": "4.2h", "previousValue": "2.8h", "trend": "up" }
+          ]
+        },
+        {
+          "type": "chart",
+          "title": "Auth Errors Over Time",
+          "chartType": "line",
+          "xAxisLabel": "Day",
+          "yAxisLabel": "Errors/hr",
+          "series": [
+            {
+              "name": "Auth Errors",
+              "color": "#dc2626",
+              "data": [
+                { "x": "Mar 10", "y": 8.5 },
+                { "x": "Mar 12", "y": 9.1 },
+                { "x": "Mar 14", "y": 7.2 },
+                { "x": "Mar 16", "y": 12.3 },
+                { "x": "Mar 18", "y": 4.1 },
+                { "x": "Mar 20", "y": 2.8 },
+                { "x": "Mar 22", "y": 2.3 },
+                { "x": "Mar 24", "y": 2.1 }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "link-list",
+          "title": "Related Pull Requests",
+          "links": [
+            { "label": "feat: OAuth2 PKCE login flow", "url": "https://github.com/acme/atlas-web/pull/142", "repo": "atlas-web", "type": "pr", "description": "Complete rewrite of login using PKCE flow with refresh token support" },
+            { "label": "feat: refresh token rotation middleware", "url": "https://github.com/acme/atlas-api/pull/89", "repo": "atlas-api", "type": "pr" },
+            { "label": "fix: Safari token invalidation race", "url": "https://github.com/acme/atlas-web/pull/148", "repo": "atlas-web", "type": "pr" },
+            { "label": "chore: update auth middleware tests", "url": "https://github.com/acme/atlas-api/pull/91", "repo": "atlas-api", "type": "pr" }
+          ]
+        },
+        {
+          "type": "contributor-list",
+          "title": "Contributors",
+          "contributors": [
+            { "name": "Sarah Chen", "username": "schen", "commits": 28, "prsMerged": 3, "linesAdded": 1820, "linesRemoved": 640 },
+            { "name": "Marcus Rivera", "username": "mrivera", "commits": 15, "prsMerged": 2, "linesAdded": 980, "linesRemoved": 420 }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "theme",
+      "slug": "performance",
+      "title": "Performance Optimization",
+      "status": "in-progress",
+      "progress": {
+        "items": [
+          { "text": "Lazy-loaded 12 route chunks, reducing initial bundle by 34%", "link": "https://github.com/acme/atlas-web/pull/151" },
+          { "text": "Implemented virtual scrolling on dashboard table (10k+ rows)" },
+          { "text": "Moved shared validators to tree-shakeable exports" }
+        ]
+      },
+      "problems": {
+        "items": [
+          { "text": "SSR hydration mismatch with React.lazy components" },
+          { "text": "Lighthouse CI scores inconsistent between runs" }
+        ]
+      },
+      "plans": {
+        "items": [
+          { "text": "Add performance budget to CI pipeline" },
+          { "text": "Optimize image pipeline with next/image" },
+          { "text": "Profile and optimize server-side rendering" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "metric",
+          "title": "Web Vitals",
+          "metrics": [
+            { "label": "Bundle Size", "value": 245, "previousValue": 372, "unit": "KB", "trend": "down", "source": "Webpack Analyzer" },
+            { "label": "LCP", "value": 1.8, "previousValue": 3.2, "unit": "s", "trend": "down", "source": "Lighthouse" },
+            { "label": "FID", "value": 45, "previousValue": 120, "unit": "ms", "trend": "down", "source": "Lighthouse" },
+            { "label": "CLS", "value": 0.02, "previousValue": 0.08, "trend": "down", "source": "Lighthouse" }
+          ]
+        },
+        {
+          "type": "chart",
+          "title": "Bundle Size Over Sprint",
+          "chartType": "line",
+          "xAxisLabel": "Day",
+          "yAxisLabel": "KB",
+          "series": [
+            {
+              "name": "Bundle Size (KB)",
+              "data": [
+                { "x": "Mar 10", "y": 372 },
+                { "x": "Mar 12", "y": 372 },
+                { "x": "Mar 14", "y": 348 },
+                { "x": "Mar 17", "y": 310 },
+                { "x": "Mar 19", "y": 285 },
+                { "x": "Mar 21", "y": 260 },
+                { "x": "Mar 24", "y": 245 }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "markdown",
+          "title": "Technical Notes",
+          "content": "### Route-based Code Splitting\n\nWe migrated from a monolithic bundle to route-based code splitting using `React.lazy` and `Suspense`. Each of the 12 major routes now loads independently.\n\n**Key changes:**\n- Dashboard, Settings, Analytics, and Reports are all lazy-loaded\n- Shared component library is extracted to a common chunk\n- Vendor dependencies split by usage frequency\n\n### Virtual Scrolling\n\nThe dashboard table now uses `react-window` for virtualized rendering. This handles 10,000+ rows without DOM bloat.\n\n| Metric | Before | After |\n|--------|--------|-------|\n| Render time (10k rows) | 2.4s | 45ms |\n| Memory usage | 340MB | 52MB |\n| Scroll FPS | 12 | 60 |"
+        }
+      ]
+    },
+    {
+      "type": "theme",
+      "slug": "rate-limiting",
+      "title": "API Rate Limiting",
+      "status": "completed",
+      "progress": {
+        "items": [
+          { "text": "Implemented sliding window rate limiter with configurable thresholds" },
+          { "text": "Added Redis-backed distributed counter for multi-instance support" },
+          { "text": "Provisioned Redis cluster in staging environment" },
+          { "text": "Load tested at 5x expected peak traffic" }
+        ]
+      },
+      "problems": {
+        "items": [
+          { "text": "Redis connection pool exhaustion under sustained load test (>10 min) — resolved" }
+        ]
+      },
+      "plans": {
+        "items": [
+          { "text": "Production rollout next sprint with gradual ramp" },
+          { "text": "Add rate limit dashboard to admin panel" },
+          { "text": "Document rate limit headers for API consumers" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "chart",
+          "title": "Load Test Results",
+          "chartType": "bar",
+          "xAxisLabel": "Requests/sec",
+          "yAxisLabel": "Response Time (ms)",
+          "series": [
+            {
+              "name": "P50 Latency",
+              "color": "#2563eb",
+              "data": [
+                { "x": "100", "y": 12 },
+                { "x": "500", "y": 15 },
+                { "x": "1000", "y": 18 },
+                { "x": "2500", "y": 24 },
+                { "x": "5000", "y": 38 }
+              ]
+            },
+            {
+              "name": "P99 Latency",
+              "color": "#dc2626",
+              "data": [
+                { "x": "100", "y": 28 },
+                { "x": "500", "y": 42 },
+                { "x": "1000", "y": 65 },
+                { "x": "2500", "y": 110 },
+                { "x": "5000", "y": 185 }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "link-list",
+          "title": "Related Work",
+          "links": [
+            { "label": "feat: sliding window rate limiter", "url": "https://github.com/acme/atlas-api/pull/85", "repo": "atlas-api", "type": "pr" },
+            { "label": "infra: provision Redis cluster (staging)", "url": "https://github.com/acme/atlas-infra/pull/34", "repo": "atlas-infra", "type": "pr" },
+            { "label": "Rate Limiting RFC", "url": "https://docs.acme.internal/rfcs/rate-limiting", "type": "doc", "description": "Original design document with threshold calculations" }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "theme",
+      "slug": "design-system",
+      "title": "Design System Migration",
+      "status": "in-progress",
+      "hasDemo": true,
+      "progress": {
+        "items": [
+          { "text": "Migrated 40 of 67 components to new design system" },
+          { "text": "Created Storybook stories for all migrated components", "link": "https://storybook.acme.internal" },
+          { "text": "Extracted shared component types to atlas-shared" }
+        ]
+      },
+      "problems": {
+        "items": [
+          { "text": "Legacy CSS specificity conflicts in 8 components" },
+          { "text": "Dark mode inconsistencies on components using custom colors" }
+        ]
+      },
+      "plans": {
+        "items": [
+          { "text": "Complete remaining 27 components" },
+          { "text": "Deprecate and remove old component library" },
+          { "text": "Run visual regression tests on all pages" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "metric",
+          "title": "Migration Progress",
+          "metrics": [
+            { "label": "Components Migrated", "value": "40/67", "trend": "up" },
+            { "label": "Storybook Coverage", "value": "100%", "trend": "up" },
+            { "label": "CSS Conflicts", "value": 8, "previousValue": 15, "trend": "down" },
+            { "label": "Dark Mode Issues", "value": 4, "previousValue": 12, "trend": "down" }
+          ]
+        },
+        {
+          "type": "video",
+          "title": "Design System Demo",
+          "description": "Walkthrough of the new component library and Storybook setup",
+          "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        },
+        {
+          "type": "contributor-list",
+          "title": "Contributors",
+          "contributors": [
+            { "name": "Priya Patel", "username": "ppatel", "commits": 38, "prsMerged": 4, "linesAdded": 2800, "linesRemoved": 620 },
+            { "name": "Sarah Chen", "username": "schen", "commits": 12, "prsMerged": 2, "linesAdded": 540, "linesRemoved": 280 }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "theme",
+      "slug": "cicd-pipeline",
+      "title": "CI/CD Pipeline Improvements",
+      "status": "completed",
+      "progress": {
+        "items": [
+          { "text": "Parallelized test suites across 4 runners" },
+          { "text": "Added artifact caching for node_modules and build output" },
+          { "text": "Reduced average build time from 12min to 5min" },
+          { "text": "Added build status badges to all repo READMEs" }
+        ]
+      },
+      "problems": {
+        "items": [
+          { "text": "Flaky e2e tests on Windows runners (3 tests)" }
+        ]
+      },
+      "plans": {
+        "items": [
+          { "text": "Add deployment preview environments for PRs" },
+          { "text": "Investigate self-hosted runners for cost savings" },
+          { "text": "Set up nightly full regression suite" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "metric",
+          "title": "Pipeline Performance",
+          "metrics": [
+            { "label": "Avg Build Time", "value": "5m", "previousValue": "12m", "trend": "down", "source": "GitHub Actions" },
+            { "label": "Cache Hit Rate", "value": "94%", "trend": "up" },
+            { "label": "Flaky Test Rate", "value": "1.2%", "previousValue": "4.8%", "trend": "down" },
+            { "label": "Deploy Frequency", "value": "3.2/day", "previousValue": "1.8/day", "trend": "up" }
+          ]
+        },
+        {
+          "type": "chart",
+          "title": "Build Time Trend",
+          "chartType": "area",
+          "xAxisLabel": "Day",
+          "yAxisLabel": "Minutes",
+          "series": [
+            {
+              "name": "Build Time",
+              "data": [
+                { "x": "Mar 10", "y": 12.1 },
+                { "x": "Mar 12", "y": 11.8 },
+                { "x": "Mar 14", "y": 9.2 },
+                { "x": "Mar 17", "y": 7.5 },
+                { "x": "Mar 19", "y": 6.1 },
+                { "x": "Mar 21", "y": 5.3 },
+                { "x": "Mar 24", "y": 5.0 }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "link-list",
+          "title": "Related Work",
+          "links": [
+            { "label": "ci: parallelize test suites", "url": "https://github.com/acme/atlas-infra/pull/31", "repo": "atlas-infra", "type": "pr" },
+            { "label": "ci: add artifact caching", "url": "https://github.com/acme/atlas-infra/pull/33", "repo": "atlas-infra", "type": "pr" },
+            { "label": "CI/CD Optimization Runbook", "url": "https://docs.acme.internal/runbooks/cicd", "type": "doc", "description": "Internal guide for pipeline configuration and troubleshooting" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,127 @@
+{
+  "meta": {
+    "title": "Sprint 12 Report",
+    "team": "Platform Team",
+    "dateRange": {
+      "start": "2026-02-10",
+      "end": "2026-02-23"
+    },
+    "repos": [
+      { "name": "atlas-web", "url": "https://github.com/acme/atlas-web" },
+      { "name": "atlas-api", "url": "https://github.com/acme/atlas-api" },
+      { "name": "atlas-shared", "url": "https://github.com/acme/atlas-shared" },
+      { "name": "atlas-infra", "url": "https://github.com/acme/atlas-infra" }
+    ],
+    "generatedAt": "2026-02-23T16:00:00Z",
+    "contact": ["Slack: #platform-team", "On-call: PagerDuty rotation", "Email: platform@acme.internal"]
+  },
+  "summary": {
+    "type": "summary",
+    "slug": "summary",
+    "title": "Sprint 12 Overview",
+    "subtitle": "Platform Team — Feb 10–23, 2026",
+    "stats": [
+      { "label": "Deployments", "value": 11, "icon": "🚀" },
+      { "label": "Velocity", "value": "62 pts", "icon": "⚡" },
+      { "label": "Incidents", "value": 2, "icon": "🔥" },
+      { "label": "Test Pass Rate", "value": "88%", "icon": "✅" }
+    ],
+    "highlights": [
+      "Bug bash resolved 34 open issues, bringing backlog to lowest in 6 months",
+      "Onboarding flow redesign shipped to 10% of users — +22% completion rate"
+    ],
+    "detailBlocks": [
+      {
+        "type": "contributor-list",
+        "title": "Team Activity",
+        "contributors": [
+          { "name": "Sarah Chen", "username": "schen", "commits": 30, "prsOpened": 5, "prsMerged": 5, "linesAdded": 1900, "linesRemoved": 2800 },
+          { "name": "Priya Patel", "username": "ppatel", "commits": 38, "prsOpened": 6, "prsMerged": 5, "linesAdded": 3200, "linesRemoved": 480 },
+          { "name": "Marcus Rivera", "username": "mrivera", "commits": 24, "prsOpened": 4, "prsMerged": 4, "linesAdded": 1400, "linesRemoved": 1100 },
+          { "name": "James Wong", "username": "jwong", "commits": 20, "prsOpened": 3, "prsMerged": 3, "linesAdded": 980, "linesRemoved": 240 }
+        ]
+      }
+    ]
+  },
+  "themes": [
+    {
+      "type": "theme",
+      "slug": "bug-bash",
+      "title": "Bug Bash",
+      "status": "completed",
+      "progress": {
+        "items": [
+          { "text": "Resolved 34 open bugs across all repos" },
+          { "text": "Fixed 8 critical customer-reported issues" },
+          { "text": "Cleared tech debt items older than 6 months" }
+        ]
+      },
+      "problems": {
+        "items": [
+          { "text": "12 bugs deferred to backlog — require larger refactors" }
+        ]
+      },
+      "plans": {
+        "items": [
+          { "text": "Schedule quarterly bug bashes going forward" },
+          { "text": "Address deferred bugs as part of upcoming refactor themes" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "metric",
+          "title": "Bug Bash Results",
+          "metrics": [
+            { "label": "Bugs Resolved", "value": 34, "trend": "up" },
+            { "label": "Critical Fixes", "value": 8, "trend": "up" },
+            { "label": "Backlog Size", "value": 47, "previousValue": 81, "trend": "down" },
+            { "label": "Avg Age at Fix", "value": "42 days" }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "theme",
+      "slug": "onboarding-redesign",
+      "title": "Onboarding Flow Redesign",
+      "status": "in-progress",
+      "hasDemo": true,
+      "progress": {
+        "items": [
+          { "text": "New 3-step onboarding flow built and behind feature flag" },
+          { "text": "A/B test launched — 10% of new users on new flow" },
+          { "text": "Completion rate up 22% vs control group" }
+        ]
+      },
+      "problems": {
+        "items": [
+          { "text": "Step 2 (profile setup) has 18% drop-off — investigating" }
+        ]
+      },
+      "plans": {
+        "items": [
+          { "text": "Simplify profile setup step based on drop-off data" },
+          { "text": "Expand A/B test to 50% of users" },
+          { "text": "Full rollout pending step 2 optimization" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "metric",
+          "title": "Onboarding Metrics",
+          "metrics": [
+            { "label": "Completion Rate", "value": "74%", "previousValue": "52%", "trend": "up", "source": "Mixpanel" },
+            { "label": "Time to Complete", "value": "3.2 min", "previousValue": "7.8 min", "trend": "down", "source": "Mixpanel" },
+            { "label": "Step 2 Drop-off", "value": "18%", "trend": "down" }
+          ]
+        },
+        {
+          "type": "video",
+          "title": "Onboarding Flow Walkthrough",
+          "description": "Demo of the new 3-step onboarding experience",
+          "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        }
+      ]
+    }
+  ]
+}

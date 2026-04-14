@@ -1,0 +1,60 @@
+{
+  "team": "Platform Team",
+  "description": "Sprint reports for the Platform Team at Acme Corp.",
+  "reports": [
+    {
+      "slug": "full-demo",
+      "title": "Demo: All Widgets",
+      "dateRange": { "start": "2026-01-01", "end": "2026-01-14" },
+      "stats": [
+        { "label": "Widget Types", "value": 6, "icon": "🧩" },
+        { "label": "Slides", "value": 6, "icon": "📋" },
+        { "label": "Examples", "value": 14, "icon": "✨" }
+      ]
+    },
+    {
+      "slug": "sprint-big",
+      "title": "Example: Many Slides",
+      "dateRange": { "start": "2026-01-05", "end": "2026-03-27" },
+      "stats": [
+        { "label": "Sprints", "value": 6, "icon": "📋" },
+        { "label": "Deployments", "value": 74, "change": 23, "icon": "🚀" },
+        { "label": "Velocity", "value": "381 pts", "change": 11, "icon": "⚡" },
+        { "label": "Incidents", "value": 4, "lowerIsBetter": true, "icon": "🔥" }
+      ]
+    },
+    {
+      "slug": "sprint-14",
+      "title": "Sprint 14",
+      "dateRange": { "start": "2026-03-10", "end": "2026-03-24" },
+      "stats": [
+        { "label": "Deployments", "value": 14, "change": 17, "icon": "🚀" },
+        { "label": "Velocity", "value": "68 pts", "change": 6, "icon": "⚡" },
+        { "label": "Incidents", "value": 1, "icon": "🔥" },
+        { "label": "Test Pass Rate", "value": "94%", "change": 8, "icon": "✅" }
+      ]
+    },
+    {
+      "slug": "sprint-13",
+      "title": "Sprint 13",
+      "dateRange": { "start": "2026-02-24", "end": "2026-03-09" },
+      "stats": [
+        { "label": "Deployments", "value": 12, "change": 9, "icon": "🚀" },
+        { "label": "Velocity", "value": "64 pts", "change": 3, "icon": "⚡" },
+        { "label": "Incidents", "value": 3, "icon": "🔥" },
+        { "label": "Test Pass Rate", "value": "87%", "change": -1, "icon": "✅" }
+      ]
+    },
+    {
+      "slug": "sprint-12",
+      "title": "Sprint 12",
+      "dateRange": { "start": "2026-02-10", "end": "2026-02-23" },
+      "stats": [
+        { "label": "Deployments", "value": 11, "icon": "🚀" },
+        { "label": "Velocity", "value": "62 pts", "icon": "⚡" },
+        { "label": "Incidents", "value": 2, "icon": "🔥" },
+        { "label": "Test Pass Rate", "value": "88%", "icon": "✅" }
+      ]
+    }
+  ]
+}

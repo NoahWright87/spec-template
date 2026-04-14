@@ -1,0 +1,311 @@
+{
+  "meta": {
+    "title": "Demo: All Widgets",
+    "team": "Platform Team",
+    "dateRange": { "start": "2026-01-01", "end": "2026-01-14" },
+    "repos": [],
+    "generatedAt": "2026-01-14T12:00:00Z",
+    "showQA": false
+  },
+  "summary": {
+    "type": "summary",
+    "slug": "summary",
+    "title": "Demo: All Widgets",
+    "subtitle": "Every widget type — live examples and the JSON behind them",
+    "stats": [
+      { "label": "Widget Types", "value": 6, "icon": "🧩" },
+      { "label": "Slides", "value": 6, "icon": "📋" },
+      { "label": "Examples", "value": 14, "icon": "✨" }
+    ],
+    "detailBlocks": []
+  },
+  "themes": [
+    {
+      "type": "theme",
+      "slug": "widget-metric",
+      "title": "Metric Widget",
+      "status": "completed",
+      "progress": {
+        "items": [
+          { "text": "Displays numbers with optional comparison to a previous value" },
+          { "text": "Supports units, trend arrows (up / down / flat), and a source label" },
+          { "text": "Use for: performance benchmarks, test results, delivery stats, bug counts" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "metric",
+          "title": "Example — all options",
+          "metrics": [
+            { "label": "Response Time (P95)", "value": 48, "previousValue": 115, "unit": "ms", "trend": "down", "source": "Datadog" },
+            { "label": "Error Rate",          "value": "0.4%", "previousValue": "1.2%", "trend": "down" },
+            { "label": "Uptime",              "value": "99.97%", "trend": "up" },
+            { "label": "Endpoints Migrated",  "value": "12/12", "trend": "up" }
+          ]
+        },
+        {
+          "type": "markdown",
+          "content": "```json\n{\n  \"type\": \"metric\",\n  \"title\": \"Example — all options\",\n  \"metrics\": [\n    { \"label\": \"Response Time (P95)\", \"value\": 48,      \"previousValue\": 115,   \"unit\": \"ms\",  \"trend\": \"down\", \"source\": \"Datadog\" },\n    { \"label\": \"Error Rate\",          \"value\": \"0.4%\", \"previousValue\": \"1.2%\",                 \"trend\": \"down\" },\n    { \"label\": \"Uptime\",              \"value\": \"99.97%\",                                         \"trend\": \"up\" },\n    { \"label\": \"Endpoints Migrated\",  \"value\": \"12/12\",                                          \"trend\": \"up\" }\n  ]\n}\n```\n\n| Field | Type | Notes |\n|-------|------|-------|\n| `label` | string | Metric name |\n| `value` | string / number | Current value |\n| `previousValue` | string / number | Shows a before/after comparison |\n| `unit` | string | Appended to the value, e.g. `ms`, `KB` |\n| `trend` | `up` / `down` / `flat` | Arrow indicator |\n| `source` | string | Attribution label (e.g. Datadog, Mixpanel) |"
+        },
+        {
+          "type": "metric",
+          "title": "Example — minimal (label + value only)",
+          "metrics": [
+            { "label": "Bugs Resolved",  "value": 34 },
+            { "label": "Backlog Size",   "value": 47 },
+            { "label": "Avg Age at Fix", "value": "42 days" },
+            { "label": "PRs Reviewed",   "value": 23 }
+          ]
+        },
+        {
+          "type": "markdown",
+          "content": "```json\n{\n  \"type\": \"metric\",\n  \"title\": \"Example — minimal\",\n  \"metrics\": [\n    { \"label\": \"Bugs Resolved\",  \"value\": 34 },\n    { \"label\": \"Backlog Size\",   \"value\": 47 },\n    { \"label\": \"Avg Age at Fix\", \"value\": \"42 days\" },\n    { \"label\": \"PRs Reviewed\",   \"value\": 23 }\n  ]\n}\n```\n\nOnly `label` and `value` are required. `value` accepts any string or number — include units inline when useful."
+        }
+      ]
+    },
+    {
+      "type": "theme",
+      "slug": "widget-markdown",
+      "title": "Markdown Widget",
+      "status": "completed",
+      "progress": {
+        "items": [
+          { "text": "Renders any GitHub-flavored markdown: headings, bold, italic, lists, tables, code blocks" },
+          { "text": "Ideal for technical write-ups, decision rationale, approach notes, runbooks" },
+          { "text": "Use a title to give context; omit it for inline narrative between other widgets" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "markdown",
+          "title": "Example — rich text",
+          "content": "### Why we chose Elasticsearch\n\nWe evaluated **Typesense**, **Meilisearch**, and **Elasticsearch**. Elasticsearch won on three dimensions:\n\n1. **Scale** — handles our 148k product catalog with room to grow\n2. **Faceting** — native support for multi-level category filtering\n3. **Team familiarity** — two engineers have prior production experience with it\n\n*Typesense* was the runner-up. We'll revisit if hosting costs become a concern."
+        },
+        {
+          "type": "markdown",
+          "content": "```json\n{\n  \"type\": \"markdown\",\n  \"title\": \"Example — rich text\",\n  \"content\": \"### Why we chose Elasticsearch\\n\\nWe evaluated **Typesense**, **Meilisearch**, and **Elasticsearch**...\\n\\n1. **Scale** — handles our 148k product catalog\\n2. **Faceting** — native multi-level filtering\\n3. **Team familiarity** — two engineers have prior experience\\n\"\n}\n```\n\nUse `\\n` for newlines inside the `content` string. Standard markdown syntax works: `**bold**`, `*italic*`, `# Headings`, `- lists`, `` `inline code` ``."
+        },
+        {
+          "type": "markdown",
+          "title": "Example — table",
+          "content": "| Metric | Before | After | Delta |\n|--------|--------|-------|-------|\n| Bundle Size | 372 KB | 245 KB | -34% |\n| LCP | 3.2s | 1.8s | -44% |\n| FID | 120ms | 45ms | -63% |\n| CLS | 0.08 | 0.02 | -75% |"
+        },
+        {
+          "type": "markdown",
+          "content": "```json\n{\n  \"type\": \"markdown\",\n  \"title\": \"Example — table\",\n  \"content\": \"| Metric | Before | After | Delta |\\n|--------|--------|-------|-------|\\n| Bundle Size | 372 KB | 245 KB | -34% |\\n| LCP        | 3.2s   | 1.8s  | -44% |\"\n}\n```\n\nGFM table syntax: header row, separator row (`|---|`), then data rows. Use `\\n` between rows."
+        },
+        {
+          "type": "markdown",
+          "title": "Example — code block",
+          "content": "The new rate limiter uses a sliding window backed by Redis:\n\n```typescript\nasync function checkRateLimit(key: string, limit: number, windowMs: number) {\n  const now = Date.now();\n  const windowStart = now - windowMs;\n\n  await redis.zremrangebyscore(key, 0, windowStart);\n  const count = await redis.zcard(key);\n\n  if (count >= limit) throw new RateLimitError();\n\n  await redis.zadd(key, now, `${now}`);\n  await redis.pexpire(key, windowMs);\n}\n```"
+        },
+        {
+          "type": "markdown",
+          "content": "Fenced code blocks use triple backticks with an optional language hint for syntax highlighting:\n\n    ```typescript\n    const x = 1;\n    ```\n\nIn JSON, the backticks don't need escaping — only the inner quotes and newlines do:\n\n```json\n{\n  \"type\": \"markdown\",\n  \"content\": \"```typescript\\nasync function check() {\\n  const count = await redis.zcard(key);\\n}\\n```\"\n}\n```"
+        }
+      ]
+    },
+    {
+      "type": "theme",
+      "slug": "widget-contributors",
+      "title": "Contributor Widget",
+      "status": "completed",
+      "progress": {
+        "items": [
+          { "text": "Shows team member activity: commits, PRs opened/merged, lines added/removed" },
+          { "text": "All stat fields are optional — show only what's meaningful for your team" },
+          { "text": "Use for: sprint activity summaries, recognizing contributors, highlighting ownership" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "contributor-list",
+          "title": "Example — full stats",
+          "contributors": [
+            { "name": "Sarah Chen",    "username": "schen",   "commits": 45, "prsOpened": 8, "prsMerged": 7, "linesAdded": 3420, "linesRemoved": 1205 },
+            { "name": "Priya Patel",   "username": "ppatel",  "commits": 52, "prsOpened": 7, "prsMerged": 6, "linesAdded": 4100, "linesRemoved": 890 },
+            { "name": "Marcus Rivera", "username": "mrivera", "commits": 38, "prsOpened": 5, "prsMerged": 5, "linesAdded": 2850, "linesRemoved": 1640 },
+            { "name": "James Wong",    "username": "jwong",   "commits": 22, "prsOpened": 3, "prsMerged": 3, "linesAdded": 1180, "linesRemoved": 420 }
+          ]
+        },
+        {
+          "type": "markdown",
+          "content": "```json\n{\n  \"type\": \"contributor-list\",\n  \"title\": \"Example — full stats\",\n  \"contributors\": [\n    { \"name\": \"Sarah Chen\",    \"username\": \"schen\",   \"commits\": 45, \"prsOpened\": 8, \"prsMerged\": 7, \"linesAdded\": 3420, \"linesRemoved\": 1205 },\n    { \"name\": \"Priya Patel\",   \"username\": \"ppatel\",  \"commits\": 52, \"prsOpened\": 7, \"prsMerged\": 6, \"linesAdded\": 4100, \"linesRemoved\": 890 },\n    { \"name\": \"Marcus Rivera\", \"username\": \"mrivera\", \"commits\": 38, \"prsOpened\": 5, \"prsMerged\": 5, \"linesAdded\": 2850, \"linesRemoved\": 1640 }\n  ]\n}\n```\n\n| Field | Type | Notes |\n|-------|------|-------|\n| `name` | string | Display name |\n| `username` | string | Used for avatar lookup and `@mention` display |\n| `commits` | number | |\n| `prsOpened` | number | |\n| `prsMerged` | number | |\n| `linesAdded` | number | |\n| `linesRemoved` | number | |\n\nAll stat fields are optional — omit any you don't track."
+        },
+        {
+          "type": "contributor-list",
+          "title": "Example — commits only",
+          "contributors": [
+            { "name": "Sarah Chen",    "username": "schen",   "commits": 45 },
+            { "name": "Priya Patel",   "username": "ppatel",  "commits": 52 },
+            { "name": "Marcus Rivera", "username": "mrivera", "commits": 38 }
+          ]
+        },
+        {
+          "type": "markdown",
+          "content": "```json\n{\n  \"type\": \"contributor-list\",\n  \"title\": \"Example — commits only\",\n  \"contributors\": [\n    { \"name\": \"Sarah Chen\",    \"username\": \"schen\",   \"commits\": 45 },\n    { \"name\": \"Priya Patel\",   \"username\": \"ppatel\",  \"commits\": 52 },\n    { \"name\": \"Marcus Rivera\", \"username\": \"mrivera\", \"commits\": 38 }\n  ]\n}\n```\n\nOnly `name` and `username` are required. Show only the columns that matter for your team."
+        }
+      ]
+    },
+    {
+      "type": "theme",
+      "slug": "widget-chart",
+      "title": "Chart Widget",
+      "status": "completed",
+      "progress": {
+        "items": [
+          { "text": "Three chart types: line, area, bar" },
+          { "text": "Supports multiple series with custom colors" },
+          { "text": "Use for: trends over a sprint, before/after comparisons, distribution data" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "chart",
+          "title": "Example — line chart (single series)",
+          "chartType": "line",
+          "xAxisLabel": "Day",
+          "yAxisLabel": "Errors/hr",
+          "series": [
+            {
+              "name": "Error Rate",
+              "color": "#dc2626",
+              "data": [
+                { "x": "Mar 10", "y": 12.4 }, { "x": "Mar 12", "y": 9.8 }, { "x": "Mar 14", "y": 6.2 },
+                { "x": "Mar 16", "y": 4.1 },  { "x": "Mar 18", "y": 3.5 }, { "x": "Mar 20", "y": 2.9 },
+                { "x": "Mar 24", "y": 2.2 }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "markdown",
+          "content": "```json\n{\n  \"type\": \"chart\",\n  \"title\": \"Error Rate Over Sprint\",\n  \"chartType\": \"line\",\n  \"xAxisLabel\": \"Day\",\n  \"yAxisLabel\": \"Errors/hr\",\n  \"series\": [\n    {\n      \"name\": \"Error Rate\",\n      \"color\": \"#dc2626\",\n      \"data\": [\n        { \"x\": \"Mar 10\", \"y\": 12.4 },\n        { \"x\": \"Mar 12\", \"y\": 9.8 },\n        { \"x\": \"Mar 14\", \"y\": 6.2 }\n      ]\n    }\n  ]\n}\n```\n\n`chartType` is `line`, `area`, or `bar`. `color` is optional — omit to use the default theme color. `xAxisLabel` and `yAxisLabel` are optional."
+        },
+        {
+          "type": "chart",
+          "title": "Example — area chart (multi-series)",
+          "chartType": "area",
+          "xAxisLabel": "Day",
+          "yAxisLabel": "ms",
+          "series": [
+            {
+              "name": "P50",
+              "color": "#2563eb",
+              "data": [
+                { "x": "Mar 10", "y": 42 }, { "x": "Mar 12", "y": 38 }, { "x": "Mar 14", "y": 35 },
+                { "x": "Mar 16", "y": 31 }, { "x": "Mar 18", "y": 29 }, { "x": "Mar 24", "y": 26 }
+              ]
+            },
+            {
+              "name": "P95",
+              "color": "#9333ea",
+              "data": [
+                { "x": "Mar 10", "y": 115 }, { "x": "Mar 12", "y": 98 }, { "x": "Mar 14", "y": 80 },
+                { "x": "Mar 16", "y": 65 },  { "x": "Mar 18", "y": 56 }, { "x": "Mar 24", "y": 48 }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "markdown",
+          "content": "```json\n{\n  \"type\": \"chart\",\n  \"chartType\": \"area\",\n  \"series\": [\n    {\n      \"name\": \"P50\",\n      \"color\": \"#2563eb\",\n      \"data\": [ { \"x\": \"Mar 10\", \"y\": 42 }, { \"x\": \"Mar 12\", \"y\": 38 } ]\n    },\n    {\n      \"name\": \"P95\",\n      \"color\": \"#9333ea\",\n      \"data\": [ { \"x\": \"Mar 10\", \"y\": 115 }, { \"x\": \"Mar 12\", \"y\": 98 } ]\n    }\n  ]\n}\n```\n\nAdd multiple objects to `series` for a multi-series chart. Each series gets its own color and legend entry."
+        },
+        {
+          "type": "chart",
+          "title": "Example — bar chart",
+          "chartType": "bar",
+          "xAxisLabel": "Requests/sec",
+          "yAxisLabel": "Latency (ms)",
+          "series": [
+            {
+              "name": "P50",
+              "color": "#2563eb",
+              "data": [
+                { "x": "100", "y": 12 }, { "x": "500", "y": 15 }, { "x": "1000", "y": 18 },
+                { "x": "2500", "y": 24 }, { "x": "5000", "y": 38 }
+              ]
+            },
+            {
+              "name": "P99",
+              "color": "#dc2626",
+              "data": [
+                { "x": "100", "y": 28 }, { "x": "500", "y": 42 }, { "x": "1000", "y": 65 },
+                { "x": "2500", "y": 110 }, { "x": "5000", "y": 185 }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "markdown",
+          "content": "```json\n{\n  \"type\": \"chart\",\n  \"chartType\": \"bar\",\n  \"xAxisLabel\": \"Requests/sec\",\n  \"yAxisLabel\": \"Latency (ms)\",\n  \"series\": [\n    { \"name\": \"P50\", \"color\": \"#2563eb\", \"data\": [ { \"x\": \"100\", \"y\": 12 }, { \"x\": \"5000\", \"y\": 38 } ] },\n    { \"name\": \"P99\", \"color\": \"#dc2626\", \"data\": [ { \"x\": \"100\", \"y\": 28 }, { \"x\": \"5000\", \"y\": 185 } ] }\n  ]\n}\n```\n\nBar charts work well for comparisons across discrete categories. The `x` value in each data point can be a string (category label) or number."
+        }
+      ]
+    },
+    {
+      "type": "theme",
+      "slug": "widget-links",
+      "title": "Link List Widget",
+      "status": "completed",
+      "progress": {
+        "items": [
+          { "text": "Lists links to PRs, commits, issues, docs, or any external URL" },
+          { "text": "Each link can have a type badge, repo label, and description" },
+          { "text": "Use for: related pull requests, design docs, runbooks, demo recordings" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "link-list",
+          "title": "Example — all link types",
+          "links": [
+            { "label": "feat: OAuth2 PKCE login flow",          "url": "https://github.com/acme/atlas-web/pull/142",         "repo": "atlas-web", "type": "pr",       "description": "Complete rewrite of login using PKCE with refresh token rotation" },
+            { "label": "fix: token invalidation race on Safari", "url": "https://github.com/acme/atlas-web/pull/148",         "repo": "atlas-web", "type": "pr" },
+            { "label": "bug: session expires too early (#341)",  "url": "https://github.com/acme/atlas-web/issues/341",       "repo": "atlas-web", "type": "issue" },
+            { "label": "abc1234 — bump auth provider SDK",       "url": "https://github.com/acme/atlas-api/commit/abc1234",  "repo": "atlas-api", "type": "commit" },
+            { "label": "Auth Overhaul RFC",                      "url": "https://docs.acme.internal/rfcs/auth-overhaul",      "type": "doc",       "description": "Original design doc with threat model and token strategy" },
+            { "label": "Storybook — updated auth components",    "url": "https://storybook.acme.internal",                   "type": "external" }
+          ]
+        },
+        {
+          "type": "markdown",
+          "content": "```json\n{\n  \"type\": \"link-list\",\n  \"title\": \"Related Work\",\n  \"links\": [\n    {\n      \"label\": \"feat: OAuth2 PKCE login flow\",\n      \"url\": \"https://github.com/acme/atlas-web/pull/142\",\n      \"repo\": \"atlas-web\",\n      \"type\": \"pr\",\n      \"description\": \"Complete rewrite of login using PKCE\"\n    },\n    {\n      \"label\": \"Auth Overhaul RFC\",\n      \"url\": \"https://docs.acme.internal/rfcs/auth\",\n      \"type\": \"doc\"\n    }\n  ]\n}\n```\n\n| Field | Type | Notes |\n|-------|------|-------|\n| `label` | string | Display text for the link |\n| `url` | string | Where the link goes |\n| `type` | `pr` / `issue` / `commit` / `doc` / `external` | Badge shown next to the label |\n| `repo` | string | Repo attribution label |\n| `description` | string | Optional subtitle shown below the label |\n\nAll fields except `label` and `url` are optional."
+        }
+      ]
+    },
+    {
+      "type": "theme",
+      "slug": "widget-video",
+      "title": "Video Widget",
+      "status": "completed",
+      "progress": {
+        "items": [
+          { "text": "Embeds a video from YouTube, Vimeo, or any URL supported by the browser" },
+          { "text": "Optional title and description for context" },
+          { "text": "Use for: demo recordings, walkthroughs, incident retrospectives, onboarding clips" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "video",
+          "title": "Example — demo recording",
+          "description": "Walkthrough of the new 3-step onboarding experience (recorded Mar 24)",
+          "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        },
+        {
+          "type": "markdown",
+          "content": "```json\n{\n  \"type\": \"video\",\n  \"title\": \"Example — demo recording\",\n  \"description\": \"Walkthrough of the new 3-step onboarding experience\",\n  \"url\": \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\"\n}\n```\n\n| Field | Type | Notes |\n|-------|------|-------|\n| `url` | string | YouTube, Vimeo, or direct video URL |\n| `title` | string | Optional heading above the player |\n| `description` | string | Optional caption below the title |\n\n`url` is the only required field. YouTube `watch?v=` URLs are automatically converted to embeds."
+        },
+        {
+          "type": "video",
+          "title": "Example — no title or description",
+          "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        },
+        {
+          "type": "markdown",
+          "content": "```json\n{\n  \"type\": \"video\",\n  \"url\": \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\"\n}\n```\n\nMinimal form — just the URL."
+        }
+      ]
+    }
+  ]
+}

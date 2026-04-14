@@ -1,0 +1,179 @@
+{
+  "meta": {
+    "title": "Sprint 13 Report",
+    "team": "Platform Team",
+    "dateRange": {
+      "start": "2026-02-24",
+      "end": "2026-03-09"
+    },
+    "repos": [
+      { "name": "atlas-web", "url": "https://github.com/acme/atlas-web" },
+      { "name": "atlas-api", "url": "https://github.com/acme/atlas-api" },
+      { "name": "atlas-infra", "url": "https://github.com/acme/atlas-infra" }
+    ],
+    "generatedAt": "2026-03-09T17:00:00Z",
+    "contact": ["Slack: #platform-team", "On-call: PagerDuty rotation", "Email: platform@acme.internal"]
+  },
+  "summary": {
+    "type": "summary",
+    "slug": "summary",
+    "title": "Sprint 13 Overview",
+    "subtitle": "Platform Team — Feb 24 – Mar 9, 2026",
+    "stats": [
+      { "label": "Deployments", "value": 12, "change": 9, "icon": "🚀" },
+      { "label": "Velocity", "value": "64 pts", "change": 3, "icon": "⚡" },
+      { "label": "Incidents", "value": 3, "icon": "🔥" },
+      { "label": "Test Pass Rate", "value": "87%", "change": -1, "icon": "✅" }
+    ],
+    "highlights": [
+      "REST-to-GraphQL API migration complete for all core entities",
+      "CloudWatch and Datadog monitoring deployed across all services",
+      "Search feature 70% complete — Elasticsearch cluster operational"
+    ],
+    "detailBlocks": [
+      {
+        "type": "contributor-list",
+        "title": "Team Activity",
+        "contributors": [
+          { "name": "Sarah Chen", "username": "schen", "commits": 28, "prsOpened": 5, "prsMerged": 4, "linesAdded": 2100, "linesRemoved": 980 },
+          { "name": "Marcus Rivera", "username": "mrivera", "commits": 42, "prsOpened": 6, "prsMerged": 5, "linesAdded": 3400, "linesRemoved": 2100 },
+          { "name": "James Wong", "username": "jwong", "commits": 28, "prsOpened": 4, "prsMerged": 4, "linesAdded": 1800, "linesRemoved": 540 }
+        ]
+      }
+    ]
+  },
+  "themes": [
+    {
+      "type": "theme",
+      "slug": "api-migration",
+      "title": "REST-to-GraphQL Migration",
+      "status": "completed",
+      "progress": {
+        "items": [
+          { "text": "Migrated 12 core REST endpoints to GraphQL resolvers" },
+          { "text": "Added DataLoader for N+1 query prevention", "link": "https://github.com/acme/atlas-api/pull/78" },
+          { "text": "Published schema to internal developer portal", "link": "https://docs.acme.internal/graphql-migration" }
+        ]
+      },
+      "problems": {
+        "items": [
+          { "text": "Subscription support delayed — WebSocket infra not ready" }
+        ]
+      },
+      "plans": {
+        "items": [
+          { "text": "Deprecate legacy REST endpoints over next 2 sprints" },
+          { "text": "Add subscription support once WebSocket infra lands" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "metric",
+          "title": "API Performance",
+          "metrics": [
+            { "label": "Avg Response Time", "value": 48, "previousValue": 115, "unit": "ms", "trend": "down", "source": "Datadog" },
+            { "label": "Endpoints Migrated", "value": "12/12", "trend": "up" },
+            { "label": "Query Depth Limit", "value": 8, "source": "Schema config" }
+          ]
+        },
+        {
+          "type": "link-list",
+          "title": "Related PRs",
+          "links": [
+            { "label": "feat: GraphQL schema v1", "url": "https://github.com/acme/atlas-api/pull/72", "repo": "atlas-api", "type": "pr" },
+            { "label": "feat: DataLoader integration", "url": "https://github.com/acme/atlas-api/pull/78", "repo": "atlas-api", "type": "pr" },
+            { "label": "GraphQL Migration Guide", "url": "https://docs.acme.internal/graphql-migration", "type": "doc" }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "theme",
+      "slug": "monitoring",
+      "title": "Observability & Monitoring",
+      "status": "completed",
+      "progress": {
+        "items": [
+          { "text": "Deployed CloudWatch dashboards for all Lambda functions" },
+          { "text": "Integrated Datadog APM across API services" },
+          { "text": "Set up PagerDuty alerts for P95 latency and error rate thresholds" }
+        ]
+      },
+      "problems": {
+        "items": []
+      },
+      "plans": {
+        "items": [
+          { "text": "Add custom business metrics (conversion rate, checkout funnel)" },
+          { "text": "Create runbook documentation for all alerts" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "chart",
+          "title": "Error Rate Over Sprint",
+          "chartType": "area",
+          "xAxisLabel": "Day",
+          "yAxisLabel": "Errors/hr",
+          "series": [
+            {
+              "name": "Error Rate",
+              "color": "#dc2626",
+              "data": [
+                { "x": "Feb 24", "y": 12.4 },
+                { "x": "Feb 26", "y": 9.8 },
+                { "x": "Feb 28", "y": 6.2 },
+                { "x": "Mar 2", "y": 4.1 },
+                { "x": "Mar 4", "y": 3.5 },
+                { "x": "Mar 6", "y": 2.9 },
+                { "x": "Mar 9", "y": 2.2 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "theme",
+      "slug": "search-feature",
+      "title": "Search Feature",
+      "status": "in-progress",
+      "progress": {
+        "items": [
+          { "text": "Elasticsearch cluster provisioned and indexed with product catalog" },
+          { "text": "Search API endpoint live with full-text and faceted filtering" },
+          { "text": "Basic search UI shipped behind feature flag" }
+        ]
+      },
+      "problems": {
+        "items": [
+          { "text": "Relevance scoring needs tuning — fuzzy match too aggressive" },
+          { "text": "Index rebuild takes 40 min on product catalog changes" }
+        ]
+      },
+      "plans": {
+        "items": [
+          { "text": "Tune BM25 relevance scoring with user feedback data" },
+          { "text": "Implement incremental index updates to cut rebuild to <5 min" },
+          { "text": "Complete search UI with filters, autocomplete, and results highlighting" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "metric",
+          "title": "Search Performance",
+          "metrics": [
+            { "label": "Search Latency (P95)", "value": 82, "unit": "ms", "source": "Datadog" },
+            { "label": "Index Size", "value": "2.4GB" },
+            { "label": "Documents Indexed", "value": "148k" }
+          ]
+        },
+        {
+          "type": "markdown",
+          "title": "Approach",
+          "content": "### Why Elasticsearch?\n\nWe evaluated Typesense, Meilisearch, and Elasticsearch. Elasticsearch won on:\n\n- **Scale**: Handles our 148k product catalog with room to grow\n- **Faceting**: Native support for multi-level category filtering\n- **Team familiarity**: Two engineers have prior Elasticsearch experience\n\n### Index Strategy\n\nWe're using a single `products` index with these analyzed fields:\n- `name` (boosted 3x)\n- `description` (standard analyzer)\n- `tags` (keyword)\n- `category_path` (path hierarchy tokenizer)"
+        }
+      ]
+    }
+  ]
+}
