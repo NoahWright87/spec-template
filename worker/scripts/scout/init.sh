@@ -73,27 +73,30 @@ if [ ! -f "$_workflow_file" ]; then
     # For a root Pages repo (username.github.io), set base_url to / manually.
     _repo_name="${TARGET_REPO#*/}"
     _base_url="/${_repo_name}"
+    _reports_path="${SCOUT_REPORTS_DIR:-docs/reports}"
     cat > "$_workflow_file" <<EOF
 name: Publish Scout Reports
 
 on:
   push:
     branches: [main]
-    paths:
-      - '${SCOUT_REPORTS_DIR:-docs/reports}/**'
+    paths: ['${_reports_path}/**']
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    paths: ['${_reports_path}/**']
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write       # push to gh-pages branch
+  pull-requests: write  # post preview comments
 
 concurrency:
-  group: pages
+  group: pages-\${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-deploy:
+    if: github.event_name != 'pull_request' || github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -101,23 +104,71 @@ jobs:
       - name: Build reports app
         uses: NoahWright87/repo-report/.github/actions/build-reports@v1
         with:
-          reports_path: ${SCOUT_REPORTS_DIR:-docs/reports}
+          reports_path: ${_reports_path}
           output_path: _site
-          base_url: ${_base_url}
+          base_url: ./
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Deploy to GitHub Pages
+        if: github.event_name != 'pull_request'
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          path: _site
+          branch: gh-pages
+          folder: _site
+          clean: true
 
-  deploy:
-    needs: build
+      - name: Deploy preview
+        if: github.event_name == 'pull_request'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: _site
+          target-folder: pr-preview/pr-\${{ github.event.pull_request.number }}
+          clean: false
+
+      - name: Post preview comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pr = context.payload.pull_request.number;
+            const url = \`https://\${owner}.github.io/\${repo}/pr-preview/pr-\${pr}/\`;
+            const marker = '<!-- scout-preview -->';
+            const body = \`\${marker}\n🤖 Claude (scout): Preview is ready!\n\n**[View report →](\${url})**\n\n_Updates automatically when new commits are pushed to this PR._\`;
+
+            const { data: comments } = await github.rest.issues.listComments(
+              { owner, repo, issue_number: pr }
+            );
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment(
+                { owner, repo, comment_id: existing.id, body }
+              );
+            } else {
+              await github.rest.issues.createComment(
+                { owner, repo, issue_number: pr, body }
+              );
+            }
+
+  cleanup:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: \${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Remove preview
+        run: |
+          dir="pr-preview/pr-\${{ github.event.pull_request.number }}"
+          if [ -d "\$dir" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git rm -rf "\$dir"
+            git commit -m "Remove preview for PR #\${{ github.event.pull_request.number }}"
+            git push
+          fi
 EOF
     echo "[worker]   Scout init: wrote .github/workflows/reports.yml"
 fi

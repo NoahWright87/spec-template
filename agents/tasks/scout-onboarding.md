@@ -33,7 +33,11 @@ After the PR is created, add **three** inline review comments using `gh api`:
    > When does your current sprint start and end? I'll align this date to your sprint cycle.
 
 3. On `.github/workflows/reports.yml`, on the `base_url` line:
-   > This is set to `/<repo-name>` which is correct for most GitHub Pages deployments. If this repo is published at the root of a custom domain (not a `/<repo>` subdirectory), change this to `/`.
+   > This is set to `./` (relative paths) so the app works at any URL depth — both the main site and PR previews. No changes needed here unless you run into asset loading issues.
+
+After opening the PR, also leave a **top-level PR comment** reminding the team of the one manual step required after merging:
+
+> 🤖 Claude (scout): After merging this PR, go to **Settings → Pages** and set the source to **"Deploy from a branch"** → branch `gh-pages`, folder `/ (root)`. The `gh-pages` branch will be created automatically on the first workflow run. Once that's done, every new Scout report PR will include a live preview link.
 
 ### Step 3 — Stop
 
