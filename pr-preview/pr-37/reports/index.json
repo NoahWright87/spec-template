@@ -1,0 +1,35 @@
+{
+  "team": "spec-template",
+  "reports": [
+    {
+      "slug": "2026-04-12",
+      "title": "Progress Report — 2026-04-12",
+      "dateRange": {
+        "start": "2026-03-13",
+        "end": "2026-04-12"
+      },
+      "stats": [
+        {
+          "label": "PRs Merged",
+          "value": 6,
+          "icon": "🔀"
+        },
+        {
+          "label": "Issues Closed",
+          "value": 0,
+          "icon": "✅"
+        },
+        {
+          "label": "Open PRs",
+          "value": 2,
+          "icon": "📬"
+        },
+        {
+          "label": "Filed Issues",
+          "value": 1,
+          "icon": "📋"
+        }
+      ]
+    }
+  ]
+}

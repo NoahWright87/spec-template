@@ -1,0 +1,199 @@
+{
+  "meta": {
+    "title": "Progress Report — 2026-04-12",
+    "team": "spec-template",
+    "dateRange": {
+      "start": "2026-03-13",
+      "end": "2026-04-12"
+    },
+    "repos": [
+      { "name": "spec-template", "url": "https://github.com/NoahWright87/spec-template" }
+    ],
+    "generatedAt": "2026-04-12T00:00:00Z"
+  },
+
+  "summary": {
+    "type": "summary",
+    "slug": "summary",
+    "title": "Summary",
+    "stats": [
+      { "label": "PRs Merged",   "value": 6, "icon": "🔀" },
+      { "label": "Issues Closed","value": 0, "icon": "✅" },
+      { "label": "Open PRs",     "value": 2, "icon": "📬" },
+      { "label": "Filed Issues", "value": 1, "icon": "📋" }
+    ],
+    "highlights": [
+      "Six PRs merged this period, with the composable multi-agent architecture landing as the major milestone — adding four named agents (intake, refine, knock-out-todos, scout), 22 reusable task files, a plugin system, and a redesigned worker entrypoint.",
+      "Developer experience improved significantly: /what-now now serves as the single entry point with an urgency-ranked menu, /pr-review codifies PR standards, and all lib commands are hidden from the IDE palette.",
+      "CI/CD was streamlined by extracting the GitHub Pages build into a reusable workflow in NoahWright87/actions, making the pattern available to any downstream repo.",
+      "Two PRs are currently in review — one extending the agent fleet with a new Bard agent, and one completing the composable architecture with task manifests and fleet manager."
+    ],
+    "detailBlocks": [
+      {
+        "type": "contributor-list",
+        "title": "Contributors",
+        "contributors": [
+          {
+            "name": "Noah Wright",
+            "username": "NoahWright87",
+            "commits": 6,
+            "prsMerged": 6
+          }
+        ]
+      }
+    ]
+  },
+
+  "themes": [
+    {
+      "type": "theme",
+      "slug": "composable-agent-architecture",
+      "title": "Composable Agent Architecture",
+      "status": "completed",
+      "description": "Multi-agent worker infrastructure with per-agent task files, plugin system, and redesigned entrypoint.",
+      "progress": {
+        "items": [
+          { "text": "4 named agents with dedicated instruction files (intake, refine, knock-out-todos, scout)" },
+          { "text": "22 reusable task files in agents/tasks/ shared across agents" },
+          { "text": "Plugin system via .claude-plugin/ for distribution with `claude plugin install`" },
+          { "text": "Worker entrypoint redesigned: per-agent check/startup scripts, situation reports, config v2, GitHub App auth" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "link-list",
+          "title": "Merged PRs",
+          "links": [
+            {
+              "label": "Back-merge changes from work",
+              "url": "https://github.com/NoahWright87/spec-template/pull/32",
+              "type": "pr",
+              "description": "Ports evolved composable agents/ directory, plugin system, and worker upgrades from internal fork."
+            },
+            {
+              "label": "Port multi-agent worker infrastructure from internal fork",
+              "url": "https://github.com/NoahWright87/spec-template/pull/30",
+              "type": "pr",
+              "description": "Replaces monolithic worker-instructions.md with multi-agent dispatch; adds Docker Compose and Kubernetes manifests."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "theme",
+      "slug": "commands-and-dx",
+      "title": "Commands & Developer Experience",
+      "status": "completed",
+      "description": "/what-now as a single ranked entry point, /pr-review command, hidden lib commands.",
+      "progress": {
+        "items": [
+          { "text": "/what-now runs a pre-flight check and labels options ⭐ Highly recommended / Recommended by urgency" },
+          { "text": "/pr-review codifies PR expectations: self-review, batch fixes, explanatory comments, reviewer replies" },
+          { "text": "knock-out-todos now opens PRs automatically and chains into /pr-review" },
+          { "text": "All lib commands hidden from IDE palette — /what-now is the only visible entry point" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "link-list",
+          "title": "Merged PRs",
+          "links": [
+            {
+              "label": "Add /what-now status assessment and /pr-review command",
+              "url": "https://github.com/NoahWright87/spec-template/pull/25",
+              "type": "pr",
+              "description": "Urgency-ranked /what-now menu; /pr-review codifies the full PR lifecycle for agents."
+            },
+            {
+              "label": "Add /what-now entry point, hide lib commands, restructure PHILOSOPHY.md",
+              "url": "https://github.com/NoahWright87/spec-template/pull/20",
+              "type": "pr",
+              "description": "Moves individual commands into lib/ so only /what-now appears in the IDE; restructures PHILOSOPHY.md around AI-adapted best practices."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "theme",
+      "slug": "cicd-and-docs",
+      "title": "CI/CD & Documentation",
+      "status": "completed",
+      "description": "Reusable Pages workflow, README cleanup, stale file removal.",
+      "progress": {
+        "items": [
+          { "text": "pages.yml extracted into reusable workflow at NoahWright87/actions — any repo can now publish docs with 8 lines of YAML" },
+          { "text": "Reusable workflow generates a Primer CSS landing page listing all published folders" },
+          { "text": "README updated with /what-now, /refine, /pr-review in What You Get table; stale root-level refine.md removed" }
+        ]
+      },
+      "detailBlocks": [
+        {
+          "type": "link-list",
+          "title": "Merged PRs",
+          "links": [
+            {
+              "label": "Migrate pages.yml to reusable workflow in NoahWright87/actions",
+              "url": "https://github.com/NoahWright87/spec-template/pull/28",
+              "type": "pr",
+              "description": "Extracts GitHub Pages build into a parameterized reusable workflow for downstream reuse."
+            },
+            {
+              "label": "Fix READMEs and remove stale root-level refine.md",
+              "url": "https://github.com/NoahWright87/spec-template/pull/29",
+              "type": "pr",
+              "description": "Updates command tables and flow diagram; removes leftover duplicate file."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "theme",
+      "slug": "in-progress",
+      "title": "In Progress",
+      "status": "in-progress",
+      "detailBlocks": [
+        {
+          "type": "link-list",
+          "title": "Open PRs",
+          "links": [
+            {
+              "label": "Composable agent architecture: tasks, manifests, fleet manager",
+              "url": "https://github.com/NoahWright87/spec-template/pull/31",
+              "type": "pr",
+              "description": "Branch: feature/composable-agent-architecture — completes the architecture with task manifests and fleet orchestration."
+            },
+            {
+              "label": "Add The Bard — weekly catchphrase agent for the fleet",
+              "url": "https://github.com/NoahWright87/spec-template/pull/34",
+              "type": "pr",
+              "description": "Branch: claude/stoic-shtern — new agent that generates a weekly catchphrase for the team."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "theme",
+      "slug": "upcoming",
+      "title": "Upcoming",
+      "status": "in-progress",
+      "detailBlocks": [
+        {
+          "type": "link-list",
+          "title": "Filed Issues",
+          "links": [
+            {
+              "label": "Delegation Engine + Cross-Repo Intake Router (ChatGPT summary + recommendations)",
+              "url": "https://github.com/NoahWright87/spec-template/issues/1",
+              "type": "issue",
+              "description": "intake:filed"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
