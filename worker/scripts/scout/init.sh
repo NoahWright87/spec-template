@@ -100,10 +100,14 @@ name: Publish Scout Reports
 on:
   push:
     branches: [main]
-    paths: ['${_reports_path}/**']
+    paths:
+      - '${_reports_path}/**'
+      - '.github/workflows/reports.yml'
   pull_request:
     types: [opened, synchronize, reopened, closed]
-    paths: ['${_reports_path}/**']
+    paths:
+      - '${_reports_path}/**'
+      - '.github/workflows/reports.yml'
   workflow_dispatch:
 
 permissions:
