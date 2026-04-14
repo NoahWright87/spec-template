@@ -88,11 +88,6 @@ fi
 _workflow_file="$WORKSPACE/.github/workflows/reports.yml"
 if [ ! -f "$_workflow_file" ]; then
     mkdir -p "$WORKSPACE/.github/workflows"
-    # Derive base_url from repo name (TARGET_REPO = owner/repo → /repo/).
-    # Trailing slash is required for Vite's base option.
-    # For a root Pages repo (username.github.io), set base_url to / manually.
-    _repo_name="${TARGET_REPO#*/}"
-    _base_url="/${_repo_name}/"
     _reports_path="${SCOUT_REPORTS_DIR:-docs/reports}"
     cat > "$_workflow_file" <<EOF
 name: Publish Scout Reports
@@ -125,12 +120,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set base URL
+        id: base
+        run: |
+          REPO="\${GITHUB_REPOSITORY#*/}"
+          if [ "\${{ github.event_name }}" = "pull_request" ]; then
+            echo "url=/\${REPO}/pr-preview/pr-\${{ github.event.pull_request.number }}/" >> \$GITHUB_OUTPUT
+          else
+            echo "url=/\${REPO}/" >> \$GITHUB_OUTPUT
+          fi
+
       - name: Build reports app
         uses: NoahWright87/repo-report/.github/actions/build-reports@main
         with:
           reports_path: ${_reports_path}
           output_path: _site
-          base_url: ./
+          base_url: \${{ steps.base.outputs.url }}
 
       - name: Deploy to GitHub Pages
         if: github.event_name != 'pull_request'
