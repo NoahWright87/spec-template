@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "title": "Scout is set up!",
+    "team": "__REPO_NAME__",
+    "dateRange": { "start": "__TODAY__", "end": "__TODAY__" },
+    "repos": [{ "name": "__REPO_NAME__", "url": "https://github.com/__TARGET_REPO__" }],
+    "generatedAt": "__TODAY__T00:00:00Z"
+  },
+  "summary": {
+    "type": "summary",
+    "slug": "summary",
+    "title": "Welcome",
+    "stats": [],
+    "highlights": [
+      "Scout is configured and ready to generate progress reports for this repo.",
+      "The first report will be created on __NEXT_REPORT_DATE__ and will appear here automatically.",
+      "Each report summarises merged PRs, open work, and filed issues for the period."
+    ],
+    "detailBlocks": []
+  },
+  "themes": []
+}

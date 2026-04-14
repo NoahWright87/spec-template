@@ -65,6 +65,25 @@ EOF
     echo "[worker]   Scout init: wrote NOTES.md"
 fi
 
+# ── Write welcome report (only if reports dir is empty) ─────────────────
+_reports_dir="$WORKSPACE/${SCOUT_REPORTS_DIR:-docs/reports}"
+_welcome_report="$_reports_dir/welcome/data.json"
+_welcome_template="/worker/agents/scout/templates/welcome-report.json"
+
+if [ ! -d "$_reports_dir" ] || [ -z "$(ls -A "$_reports_dir" 2>/dev/null)" ]; then
+    mkdir -p "$_reports_dir/welcome"
+    if [ -f "$_welcome_template" ]; then
+        _repo_name="${TARGET_REPO#*/}"
+        sed \
+            -e "s|__REPO_NAME__|${_repo_name}|g" \
+            -e "s|__TARGET_REPO__|${TARGET_REPO}|g" \
+            -e "s|__TODAY__|${_init_today}|g" \
+            -e "s|__NEXT_REPORT_DATE__|${_init_next_date}|g" \
+            "$_welcome_template" > "$_welcome_report"
+        echo "[worker]   Scout init: wrote welcome report to ${SCOUT_REPORTS_DIR:-docs/reports}/welcome/data.json"
+    fi
+fi
+
 # ── Create GH Pages workflow (only if missing) ───────────────────────────
 _workflow_file="$WORKSPACE/.github/workflows/reports.yml"
 if [ ! -f "$_workflow_file" ]; then

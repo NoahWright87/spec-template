@@ -1,22 +1,15 @@
 # Report Template: Summary (Stakeholder)
 
-This file is a schema reference and annotated example for the `SprintReport` JSON format consumed by [repo-report](https://github.com/NoahWright87/repo-report). This template produces a concise stakeholder-level report focused on outcomes rather than technical detail — no contributor breakdown, fewer themes.
-
-## Schema Reference
+Stakeholder-level variant of the `SprintReport` schema — fewer themes, no contributor breakdown, outcome-focused language. Scout reads this file when `report_instructions` points here.
 
 ```jsonc
 {
   "meta": {
-    "title": "Progress Report — 2026-04-12",
-    "team": "my-repo",
-    "dateRange": {
-      "start": "2026-03-29",
-      "end": "2026-04-12"
-    },
-    "repos": [
-      { "name": "my-repo", "url": "https://github.com/owner/my-repo" }
-    ],
-    "generatedAt": "2026-04-12T10:00:00Z"
+    "title": "Progress Report — {date}",
+    "team": "{repo-name}",
+    "dateRange": { "start": "{baseline-date}", "end": "{date}" },
+    "repos": [{ "name": "{repo-name}", "url": "https://github.com/{owner}/{repo-name}" }],
+    "generatedAt": "{iso-timestamp}"
   },
 
   "summary": {
@@ -24,58 +17,43 @@ This file is a schema reference and annotated example for the `SprintReport` JSO
     "slug": "summary",
     "title": "Summary",
 
-    // High-level outcome metrics — keep to 3-4 stats.
+    // 3-4 outcome-level stats — avoid raw counts, prefer milestone language.
     "stats": [
-      { "label": "Features Shipped", "value": 3,  "icon": "🚀" },
-      { "label": "Bugs Fixed",       "value": 5,  "icon": "🐛" },
-      { "label": "Open PRs",         "value": 2,  "icon": "📬" }
+      { "label": "Features Shipped", "value": 0, "icon": "🚀" },
+      { "label": "Bugs Fixed",       "value": 0, "icon": "🐛" },
+      { "label": "Open PRs",         "value": 0, "icon": "📬" }
     ],
 
     // 3-5 sentences answering: "Are we on track? What got done? What's next?"
     // Avoid technical jargon — write for a non-engineering audience.
-    "highlights": [
-      "The team shipped three significant features this period, including the new multi-agent worker architecture.",
-      "Five bug fixes landed, resolving the most-reported user-facing issues.",
-      "Work is on track — two PRs are in review and expected to close next cycle."
-    ],
+    "highlights": ["..."],
 
-    // No contributor-list for stakeholder reports — keep detailBlocks empty.
-    "detailBlocks": []
+    "detailBlocks": []  // no contributor list for stakeholder reports
   },
 
   "themes": [
-    // ── What shipped — group by feature area or milestone ────────────────
+    // Group completed work by feature area or milestone — not by PR.
     {
       "type": "theme",
-      "slug": "what-shipped",
+      "slug": "...",
       "title": "What Shipped",
       "status": "completed",
-      "description": "Completed features and improvements delivered this period.",
+      "description": "...",
       "progress": {
-        "items": [
-          { "text": "Multi-agent fleet manager architecture" },
-          { "text": "Improved CI/CD pipeline reliability" },
-          { "text": "Documentation and onboarding improvements" }
-        ]
+        "items": [{ "text": "..." }]
       },
       "detailBlocks": [
         {
           "type": "link-list",
           "title": "Key PRs",
           "links": [
-            {
-              "label": "Port multi-agent worker infrastructure",
-              "url": "https://github.com/owner/my-repo/pull/30",
-              "type": "pr",
-              "description": "Core architectural milestone for multi-agent support."
-            }
+            { "label": "...", "url": "...", "type": "pr", "description": "..." }
           ]
         }
       ]
     },
 
-    // ── In Progress ──────────────────────────────────────────────────────
-    // Omit if no open PRs.
+    // In Progress — omit if no open PRs
     {
       "type": "theme",
       "slug": "in-progress",
@@ -86,19 +64,13 @@ This file is a schema reference and annotated example for the `SprintReport` JSO
           "type": "link-list",
           "title": "Active Work",
           "links": [
-            {
-              "label": "Status assessment command",
-              "url": "https://github.com/owner/my-repo/pull/25",
-              "type": "pr",
-              "description": "In review — expected next cycle."
-            }
+            { "label": "...", "url": "...", "type": "pr", "description": "..." }
           ]
         }
       ]
     },
 
-    // ── Coming up ────────────────────────────────────────────────────────
-    // Open issues labeled `intake:filed`. Omit if none.
+    // Upcoming — omit if no intake:filed issues
     {
       "type": "theme",
       "slug": "upcoming",
@@ -109,12 +81,7 @@ This file is a schema reference and annotated example for the `SprintReport` JSO
           "type": "link-list",
           "title": "Queued Issues",
           "links": [
-            {
-              "label": "Add retry logic to agent worker",
-              "url": "https://github.com/owner/my-repo/issues/18",
-              "type": "issue",
-              "description": "size: S"
-            }
+            { "label": "...", "url": "...", "type": "issue", "description": "..." }
           ]
         }
       ]
