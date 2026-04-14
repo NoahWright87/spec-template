@@ -29,7 +29,7 @@ jobs:
         with:
           reports_path: docs/reports
           output_path: _site
-          base_url: ./
+          base_url: /spec-template/
           additional_static_dirs: docs,specs
 
       - name: Deploy to GitHub Pages
@@ -39,6 +39,7 @@ jobs:
           branch: gh-pages
           folder: _site
           clean: true
+          clean-exclude: pr-preview
 
       - name: Deploy preview
         if: github.event_name == 'pull_request'
