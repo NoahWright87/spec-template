@@ -1,35 +1,91 @@
-# Progress Report — {date}
+# Report Template: Summary (Stakeholder)
 
-Period: {baseline} to {date}
+Stakeholder-level variant of the `SprintReport` schema — fewer themes, no contributor breakdown, outcome-focused language. Scout reads this file when `report_instructions` points here.
 
-## Summary
+```jsonc
+{
+  "meta": {
+    "title": "Progress Report — {date}",
+    "team": "{repo-name}",
+    "dateRange": { "start": "{baseline-date}", "end": "{date}" },
+    "repos": [{ "name": "{repo-name}", "url": "https://github.com/{owner}/{repo-name}" }],
+    "generatedAt": "{iso-timestamp}"
+  },
 
-<!-- Write a narrative paragraph (3-5 sentences) summarizing progress at a high level.
-     Focus on outcomes and milestones. Weave in key metrics:
-     N items completed, N new requests received, N items in progress.
-     This should answer "Are we on track?" in a few sentences. -->
+  "summary": {
+    "type": "summary",
+    "slug": "summary",
+    "title": "Summary",
 
-## What Got Done
+    // 3-4 outcome-level stats — avoid raw counts, prefer milestone language.
+    "stats": [
+      { "label": "Features Shipped", "value": 0, "icon": "🚀" },
+      { "label": "Bugs Fixed",       "value": 0, "icon": "🐛" },
+      { "label": "Open PRs",         "value": 0, "icon": "📬" }
+    ],
 
-<!-- Group accomplishments by feature area or goal — NOT by PR/commit.
-     Each group should describe the outcome in plain language.
-     Reference issue numbers in parentheses for traceability. Example:
+    // 3-5 sentences answering: "Are we on track? What got done? What's next?"
+    // Avoid technical jargon — write for a non-engineering audience.
+    "highlights": ["..."],
 
-     **User authentication** — Login reliability improved: fixed session timeout
-     issues (#38, #22). Added protection against brute-force attempts (#41).
+    "detailBlocks": []  // no contributor list for stakeholder reports
+  },
 
-     **CI/CD pipeline** — Deploy time reduced and staging checks added,
-     reducing risk of production issues (#42, #45). -->
+  "themes": [
+    // Group completed work by feature area or milestone — not by PR.
+    {
+      "type": "theme",
+      "slug": "...",
+      "title": "What Shipped",
+      "status": "completed",
+      "description": "...",
+      "progress": {
+        "items": [{ "text": "..." }]
+      },
+      "detailBlocks": [
+        {
+          "type": "link-list",
+          "title": "Key PRs",
+          "links": [
+            { "label": "...", "url": "...", "type": "pr", "description": "..." }
+          ]
+        }
+      ]
+    },
 
-## What's In Progress
+    // In Progress — omit if no open PRs
+    {
+      "type": "theme",
+      "slug": "in-progress",
+      "title": "In Progress",
+      "status": "in-progress",
+      "detailBlocks": [
+        {
+          "type": "link-list",
+          "title": "Active Work",
+          "links": [
+            { "label": "...", "url": "...", "type": "pr", "description": "..." }
+          ]
+        }
+      ]
+    },
 
-<!-- Active work items with expected completion and any dependencies. -->
-
-## Coming Up Next
-
-<!-- Prioritized items ready to start and key milestones ahead. -->
-
-## Risks & Blockers
-
-<!-- Items that could delay progress. Include what's needed to unblock.
-     If nothing noteworthy, omit this section entirely. -->
+    // Upcoming — omit if no intake:filed issues
+    {
+      "type": "theme",
+      "slug": "upcoming",
+      "title": "Coming Up",
+      "status": "in-progress",
+      "detailBlocks": [
+        {
+          "type": "link-list",
+          "title": "Queued Issues",
+          "links": [
+            { "label": "...", "url": "...", "type": "issue", "description": "..." }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```

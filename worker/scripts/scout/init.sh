@@ -65,4 +65,131 @@ EOF
     echo "[worker]   Scout init: wrote NOTES.md"
 fi
 
+# ── Write welcome report (only if reports dir is empty) ─────────────────
+_reports_dir="$WORKSPACE/${SCOUT_REPORTS_DIR:-docs/reports}"
+_welcome_report="$_reports_dir/welcome/data.json"
+_welcome_template="/worker/agents/scout/templates/welcome-report.json"
+
+if [ ! -d "$_reports_dir" ] || [ -z "$(ls -A "$_reports_dir" 2>/dev/null)" ]; then
+    mkdir -p "$_reports_dir/welcome"
+    if [ -f "$_welcome_template" ]; then
+        _repo_name="${TARGET_REPO#*/}"
+        sed \
+            -e "s|__REPO_NAME__|${_repo_name}|g" \
+            -e "s|__TARGET_REPO__|${TARGET_REPO}|g" \
+            -e "s|__TODAY__|${_init_today}|g" \
+            -e "s|__NEXT_REPORT_DATE__|${_init_next_date}|g" \
+            "$_welcome_template" > "$_welcome_report"
+        echo "[worker]   Scout init: wrote welcome report to ${SCOUT_REPORTS_DIR:-docs/reports}/welcome/data.json"
+    fi
+fi
+
+# ── Create GH Pages workflow (only if missing) ───────────────────────────
+_workflow_file="$WORKSPACE/.github/workflows/reports.yml"
+if [ ! -f "$_workflow_file" ]; then
+    mkdir -p "$WORKSPACE/.github/workflows"
+    # Derive base_url from repo name (TARGET_REPO = owner/repo → /repo).
+    # For a root Pages repo (username.github.io), set base_url to / manually.
+    _repo_name="${TARGET_REPO#*/}"
+    _base_url="/${_repo_name}"
+    _reports_path="${SCOUT_REPORTS_DIR:-docs/reports}"
+    cat > "$_workflow_file" <<EOF
+name: Publish Scout Reports
+
+on:
+  push:
+    branches: [main]
+    paths: ['${_reports_path}/**']
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    paths: ['${_reports_path}/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write       # push to gh-pages branch
+  pull-requests: write  # post preview comments
+
+concurrency:
+  group: pages-\${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    if: github.event_name != 'pull_request' || github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build reports app
+        uses: NoahWright87/repo-report/.github/actions/build-reports@main
+        with:
+          reports_path: ${_reports_path}
+          output_path: _site
+          base_url: ./
+
+      - name: Deploy to GitHub Pages
+        if: github.event_name != 'pull_request'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: _site
+          clean: true
+
+      - name: Deploy preview
+        if: github.event_name == 'pull_request'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: _site
+          target-folder: pr-preview/pr-\${{ github.event.pull_request.number }}
+          clean: false
+
+      - name: Post preview comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pr = context.payload.pull_request.number;
+            const url = \`https://\${owner}.github.io/\${repo}/pr-preview/pr-\${pr}/\`;
+            const marker = '<!-- scout-preview -->';
+            const body = \`\${marker}\n🤖 Claude (scout): Preview is ready!\n\n**[View report →](\${url})**\n\n_Updates automatically when new commits are pushed to this PR._\`;
+
+            const { data: comments } = await github.rest.issues.listComments(
+              { owner, repo, issue_number: pr }
+            );
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment(
+                { owner, repo, comment_id: existing.id, body }
+              );
+            } else {
+              await github.rest.issues.createComment(
+                { owner, repo, issue_number: pr, body }
+              );
+            }
+
+  cleanup:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Remove preview
+        run: |
+          dir="pr-preview/pr-\${{ github.event.pull_request.number }}"
+          if [ -d "\$dir" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git rm -rf "\$dir"
+            git commit -m "Remove preview for PR #\${{ github.event.pull_request.number }}"
+            git push
+          fi
+EOF
+    echo "[worker]   Scout init: wrote .github/workflows/reports.yml"
+fi
+
 echo "[worker]   Scout init: .agents/scout/ ready (missing files filled in)"
