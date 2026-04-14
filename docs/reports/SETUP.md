@@ -11,11 +11,15 @@ Scout generates a `data.json` report each cycle at `docs/reports/{date}/data.jso
 
 ## Setup
 
-**New repos:** Scout creates `.github/workflows/reports.yml` automatically during onboarding. One manual step is required after merging the onboarding PR:
+**New repos:** Scout handles everything during onboarding — it creates `.github/workflows/reports.yml` and switches the repo's Pages source to the `gh-pages` branch automatically. No manual steps needed.
 
-> In **Settings → Pages**, set the source to **"Deploy from a branch"**, branch `gh-pages`, folder `/ (root)`. The `gh-pages` branch is created automatically on the first workflow run.
-
-**Existing repos (Scout already running):** If Scout was onboarded before this workflow existed, add `.github/workflows/reports.yml` manually — see the workflow file in any freshly onboarded repo for the template, or re-run onboarding by temporarily removing `.agents/scout/config.yaml`. Then apply the same Pages setting above.
+**Existing repos (Scout already running):** If Scout was onboarded before this workflow existed, add `.github/workflows/reports.yml` manually (see the workflow file in any freshly onboarded repo for the template, or re-run onboarding by temporarily removing `.agents/scout/config.yaml`), then switch Pages to the `gh-pages` branch:
+```bash
+gh api --method PUT repos/{owner}/{repo}/pages \
+  --field build_type=legacy \
+  --field 'source[branch]=gh-pages' \
+  --field 'source[path]=/'
+```
 
 ## Customizing the workflow
 

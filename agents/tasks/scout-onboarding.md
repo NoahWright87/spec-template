@@ -22,22 +22,28 @@ Commit all of the following in a single commit, then open a PR targeting `main`:
 
 The PR description should briefly explain what Scout does, that the team should review the config and templates before the first report runs, and that reports will be published to GH Pages automatically once the workflow is active. Point to `.agents/scout/templates/README.md` for an overview of the available templates.
 
-### Step 2 — Add inline review comments
+### Step 2 — Configure GitHub Pages
 
-After the PR is created, add **three** inline review comments using `gh api`:
+Switch the repo's Pages source to the `gh-pages` branch so previews work as soon as the first report workflow runs:
+
+```bash
+gh api --method PUT repos/{owner}/{repo}/pages \
+  --field build_type=legacy \
+  --field 'source[branch]=gh-pages' \
+  --field 'source[path]=/'
+```
+
+If this fails (e.g. Pages has never been enabled on the repo), note it in the PR description and leave a top-level comment asking the team to enable it manually: **Settings → Pages → Source → "Deploy from a branch" → `gh-pages` / `(root)`**.
+
+### Step 3 — Add inline review comments
+
+After the PR is created, add **two** inline review comments using `gh api`:
 
 1. On `.agents/scout/config.yaml`, on the `report_instructions` line:
    > See `.agents/scout/templates/` for available report formats. The default is `templates/report-technical.md` (detailed, for the dev team). Change to `templates/report-summary.md` for a high-level stakeholder format, or customize either file to match your needs.
 
 2. On `.agents/scout/config.yaml`, on the `next_report_date` line:
    > When does your current sprint start and end? I'll align this date to your sprint cycle.
-
-3. On `.github/workflows/reports.yml`, on the `base_url` line:
-   > This is set to `./` (relative paths) so the app works at any URL depth — both the main site and PR previews. No changes needed here unless you run into asset loading issues.
-
-After opening the PR, also leave a **top-level PR comment** reminding the team of the one manual step required after merging:
-
-> 🤖 Claude (scout): After merging this PR, go to **Settings → Pages** and set the source to **"Deploy from a branch"** → branch `gh-pages`, folder `/ (root)`. The `gh-pages` branch will be created automatically on the first workflow run. Once that's done, every new Scout report PR will include a live preview link.
 
 ### Step 3 — Stop
 
