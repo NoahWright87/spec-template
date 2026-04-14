@@ -102,7 +102,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build reports app
-        uses: NoahWright87/repo-report/.github/actions/build-reports@v1
+        uses: NoahWright87/repo-report/.github/actions/build-reports@main
         with:
           reports_path: ${_reports_path}
           output_path: _site

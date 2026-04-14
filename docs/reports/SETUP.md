@@ -29,4 +29,4 @@ The workflow has a few parameters you may want to adjust in `.github/workflows/r
 
 ## Versioning
 
-The workflow pins to `@v1` of the composite action — a floating tag that tracks the latest non-breaking release. To pin to a specific version for extra stability, change `@v1` to e.g. `@v1.2`. To roll back if a release breaks your site, pin to a previous tag.
+The workflow currently uses `@main`, which always resolves to the latest release. Once version tags are created in `repo-report`, you can pin to a specific version (e.g. `@v1`) for stability, and roll back to a previous tag if a release breaks your site.
