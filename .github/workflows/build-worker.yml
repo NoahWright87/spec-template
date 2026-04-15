@@ -52,7 +52,6 @@ jobs:
           context: .
           file: worker/Dockerfile
           push: true
+          no-cache: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
