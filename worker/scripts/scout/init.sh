@@ -28,6 +28,12 @@ next_report_date: "${_init_next_date}"
 report_interval_days: 14
 report_instructions: templates/report-technical.md
 reports_dir: docs/reports
+# subordinate_repos: []  # Uncomment and list repos to generate a meta-report that
+#   aggregates activity across multiple repos. Each entry is "owner/repo" format.
+#   Example:
+#     subordinate_repos:
+#       - myorg/backend
+#       - myorg/frontend
 EOF
     echo "[worker]   Scout init: wrote config.yaml"
 fi

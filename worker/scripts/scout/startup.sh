@@ -173,6 +173,63 @@ echo "$_closed_issues" | jq '.' > /tmp/scout-data/closed-issues.json
 echo "$_open_prs" | jq '.' > /tmp/scout-data/open-prs.json
 echo "$_open_issues" | jq '.' > /tmp/scout-data/open-issues.json
 
+# ── Gather subordinate repo data (meta-report mode) ──────────────────────────
+# When SCOUT_SUBORDINATE_REPOS is set, fetch the same data for each subordinate
+# repo using the GitHub API and write per-repo files to /tmp/scout-data/repos/.
+_is_meta_report=false
+_sub_repo_summary=""
+if [ -n "${SCOUT_SUBORDINATE_REPOS:-}" ]; then
+    _is_meta_report=true
+    echo "[worker]   Meta-report mode: gathering data for subordinate repos..."
+    mkdir -p /tmp/scout-data/repos
+
+    for _sub_repo in $SCOUT_SUBORDINATE_REPOS; do
+        _sub_owner=$(echo "$_sub_repo" | cut -d/ -f1)
+        _sub_name=$(echo "$_sub_repo" | cut -d/ -f2)
+        _sub_dir="/tmp/scout-data/repos/$_sub_owner/$_sub_name"
+        mkdir -p "$_sub_dir"
+
+        echo "[worker]     Fetching: $_sub_repo"
+
+        # Commits via GitHub API (since baseline date)
+        gh api --paginate \
+            "repos/$_sub_repo/commits?since=${_baseline_date}T00:00:00Z&per_page=100" \
+            --jq '.[] | "\(.sha[0:7]) \(.commit.message | split("\n")[0])"' \
+            2>/dev/null > "$_sub_dir/git-log.txt" || echo "(no commits)" > "$_sub_dir/git-log.txt"
+
+        # Merged PRs
+        gh pr list --repo "$_sub_repo" --state merged \
+            --json number,title,mergedAt,author,body,url --limit 200 2>/dev/null \
+            | jq '.' > "$_sub_dir/merged-prs.json" || echo "[]" > "$_sub_dir/merged-prs.json"
+
+        # Closed issues
+        gh issue list --repo "$_sub_repo" --state closed \
+            --json number,title,closedAt,labels,url --limit 200 2>/dev/null \
+            | jq '.' > "$_sub_dir/closed-issues.json" || echo "[]" > "$_sub_dir/closed-issues.json"
+
+        # Open PRs
+        gh pr list --repo "$_sub_repo" --state open \
+            --json number,title,labels,headRefName,url 2>/dev/null \
+            | jq '.' > "$_sub_dir/open-prs.json" || echo "[]" > "$_sub_dir/open-prs.json"
+
+        # Open issues
+        gh issue list --repo "$_sub_repo" --state open \
+            --json number,title,labels,url 2>/dev/null \
+            | jq '.' > "$_sub_dir/open-issues.json" || echo "[]" > "$_sub_dir/open-issues.json"
+
+        _sub_merged=$(jq 'length' "$_sub_dir/merged-prs.json" 2>/dev/null || echo "0")
+        _sub_closed=$(jq 'length' "$_sub_dir/closed-issues.json" 2>/dev/null || echo "0")
+        _sub_open_prs=$(jq 'length' "$_sub_dir/open-prs.json" 2>/dev/null || echo "0")
+        _sub_intake=$(jq '[.[] | select(.labels[]?.name == "intake:filed")] | length' \
+            "$_sub_dir/open-issues.json" 2>/dev/null || echo "0")
+
+        echo "[worker]     $_sub_repo: merged_prs=$_sub_merged closed_issues=$_sub_closed open_prs=$_sub_open_prs intake:filed=$_sub_intake"
+
+        _sub_repo_summary="${_sub_repo_summary}
+- \`$_sub_repo\`: ${_sub_merged} PRs merged, ${_sub_closed} issues closed, ${_sub_open_prs} open PRs, ${_sub_intake} filed — data: \`$_sub_dir/\`"
+    done
+fi
+
 # ── Build startup context for situation report ───────────────────────────────
 _startup_context="### Report Data (pre-gathered by startup script)
 
@@ -184,7 +241,7 @@ do not re-fetch from GitHub or git.
 **Reports directory:** \`${SCOUT_REPORTS_DIR}\`
 **Next report date (computed):** ${_next_report_date}
 
-**Summary metrics:**
+**Summary metrics (${TARGET_REPO}):**
 - PRs merged: ${_merged_prs_count}
 - Issues closed: ${_closed_issues_count}
 - Open PRs: $(echo "$_open_prs" | jq 'length' 2>/dev/null || echo "0")
@@ -202,6 +259,20 @@ do not re-fetch from GitHub or git.
 **Date advancement:** After generating the report, update \`.agents/scout/config.yaml\`
 with \`next_report_date: \"${_next_report_date}\"\`. Commit both the report and the
 config update in the same commit."
+
+# Append meta-report section when subordinate repos are configured
+if [ "$_is_meta_report" = true ]; then
+    _startup_context="${_startup_context}
+
+### Meta-Report Mode
+
+**Mode: META-REPORT** — Follow \`/worker/agents/tasks/generate-meta-report.md\` instead of \`generate-report.md\`.
+
+**Subordinate repos (data pre-gathered):**${_sub_repo_summary}
+
+Each subordinate repo's data directory contains the same files as the meta repo:
+\`git-log.txt\`, \`merged-prs.json\`, \`closed-issues.json\`, \`open-prs.json\`, \`open-issues.json\`."
+fi
 
 # Export for use by the agent
 export SCOUT_REPORT_DATE="$_today"

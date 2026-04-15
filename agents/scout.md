@@ -27,7 +27,10 @@ If there is no PR in the Situation Report, skip directly to the core workflow.
 
 ### 3. Core workflow
 
-Read and follow [tasks/generate-report.md](tasks/generate-report.md) — gather data and generate the progress report.
+Check the **Situation Report** for `Mode: META-REPORT`.
+
+- **If meta-report mode:** read and follow [tasks/generate-meta-report.md](tasks/generate-meta-report.md) — aggregate data from all repos and generate a combined progress report.
+- **Otherwise:** read and follow [tasks/generate-report.md](tasks/generate-report.md) — gather data and generate the progress report for this repo.
 
 **Important:** Base your analysis on the most recent state of `main`. The startup script fetches the latest changes, but always verify you are working with current data and not stale history.
 
