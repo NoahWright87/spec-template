@@ -28,6 +28,15 @@ next_report_date: "${_init_next_date}"
 report_interval_days: 14
 report_instructions: templates/report-technical.md
 reports_dir: docs/reports
+# sub_scouts: []  # List Scout-enabled repos whose reports this Scout should summarize.
+#   Each entry is either a plain "owner/repo" string (scout_dir defaults to .agents/scout)
+#   or an object with an optional scout_dir override.
+#   Example:
+#     sub_scouts:
+#       - myorg/backend
+#       - myorg/frontend
+#       - repo: myorg/platform
+#         scout_dir: .agents/scout
 EOF
     echo "[worker]   Scout init: wrote config.yaml"
 fi

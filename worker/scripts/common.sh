@@ -196,7 +196,11 @@ read_agent_config() {
             SCOUT_NEXT_REPORT_DATE=$(yq '.next_report_date // ""' "$agent_config")
             SCOUT_REPORT_INTERVAL=$(yq '.report_interval_days // 14' "$agent_config")
             SCOUT_REPORT_INSTRUCTIONS=$(yq '.report_instructions // "templates/report-technical.md"' "$agent_config")
-            export SCOUT_NEXT_REPORT_DATE SCOUT_REPORT_INTERVAL SCOUT_REPORT_INSTRUCTIONS
+            # sub_scouts entries are either a plain "owner/repo" string or an object
+            # {repo: "owner/repo", scout_dir: ".agents/scout"}. Normalize to "repo|dir" pairs.
+            SCOUT_SUB_SCOUTS=$(yq '.sub_scouts // [] | .[] | ((.repo // .) + "|" + (.scout_dir // ".agents/scout"))' \
+                "$agent_config" 2>/dev/null | tr '\n' ' ' | sed 's/[[:space:]]*$//' || echo "")
+            export SCOUT_NEXT_REPORT_DATE SCOUT_REPORT_INTERVAL SCOUT_REPORT_INSTRUCTIONS SCOUT_SUB_SCOUTS
             ;;
     esac
 
