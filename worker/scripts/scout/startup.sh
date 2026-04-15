@@ -174,15 +174,44 @@ echo "$_open_prs" | jq '.' > /tmp/scout-data/open-prs.json
 echo "$_open_issues" | jq '.' > /tmp/scout-data/open-issues.json
 
 # ── Gather subordinate repo data (meta-report mode) ──────────────────────────
-# When SCOUT_SUBORDINATE_REPOS is set, fetch the same data for each subordinate
-# repo using the GitHub API and write per-repo files to /tmp/scout-data/repos/.
+# When SCOUT_SUBORDINATE_REPOS is set, fetch data for each subordinate repo
+# using the GitHub API, then pre-compute aggregate stats and a repo index so
+# Claude only needs to synthesize narratives and group themes — no arithmetic.
 _is_meta_report=false
 _sub_repo_summary=""
+
 if [ -n "${SCOUT_SUBORDINATE_REPOS:-}" ]; then
     _is_meta_report=true
     echo "[worker]   Meta-report mode: gathering data for subordinate repos..."
     mkdir -p /tmp/scout-data/repos
 
+    # ── Seed meta-index with the meta repo entry ─────────────────────────
+    _meta_owner=$(echo "$TARGET_REPO" | cut -d/ -f1)
+    _meta_name=$(echo "$TARGET_REPO" | cut -d/ -f2)
+    _meta_open_prs_count=$(echo "$_open_prs" | jq 'length' 2>/dev/null || echo "0")
+
+    _index_entries=$(jq -n \
+        --arg  repo         "$TARGET_REPO" \
+        --arg  name         "$_meta_name" \
+        --arg  github_url   "https://github.com/$TARGET_REPO" \
+        --arg  reports_url  "https://$_meta_owner.github.io/$_meta_name/" \
+        --arg  data_dir     "/tmp/scout-data" \
+        --argjson prs_merged    "$_merged_prs_count" \
+        --argjson issues_closed "$_closed_issues_count" \
+        --argjson open_prs      "$_meta_open_prs_count" \
+        --argjson open_issues   "$_new_issues_count" \
+        --argjson intake_filed  "$_intake_count" \
+        '[{repo:$repo,name:$name,github_url:$github_url,reports_url:$reports_url,
+           data_dir:$data_dir,is_meta:true,prs_merged:$prs_merged,
+           issues_closed:$issues_closed,open_prs:$open_prs,
+           open_issues:$open_issues,intake_filed:$intake_filed}]')
+
+    _total_merged=$_merged_prs_count
+    _total_closed=$_closed_issues_count
+    _total_open_prs=$_meta_open_prs_count
+    _total_intake=$_intake_count
+
+    # ── Fetch each subordinate repo and append to index ───────────────────
     for _sub_repo in $SCOUT_SUBORDINATE_REPOS; do
         _sub_owner=$(echo "$_sub_repo" | cut -d/ -f1)
         _sub_name=$(echo "$_sub_repo" | cut -d/ -f2)
@@ -195,39 +224,81 @@ if [ -n "${SCOUT_SUBORDINATE_REPOS:-}" ]; then
         gh api --paginate \
             "repos/$_sub_repo/commits?since=${_baseline_date}T00:00:00Z&per_page=100" \
             --jq '.[] | "\(.sha[0:7]) \(.commit.message | split("\n")[0])"' \
-            2>/dev/null > "$_sub_dir/git-log.txt" || echo "(no commits)" > "$_sub_dir/git-log.txt"
+            2>/dev/null > "$_sub_dir/git-log.txt" \
+            || echo "(no commits)" > "$_sub_dir/git-log.txt"
 
         # Merged PRs
         gh pr list --repo "$_sub_repo" --state merged \
             --json number,title,mergedAt,author,body,url --limit 200 2>/dev/null \
-            | jq '.' > "$_sub_dir/merged-prs.json" || echo "[]" > "$_sub_dir/merged-prs.json"
+            | jq '.' > "$_sub_dir/merged-prs.json" \
+            || echo "[]" > "$_sub_dir/merged-prs.json"
 
         # Closed issues
         gh issue list --repo "$_sub_repo" --state closed \
             --json number,title,closedAt,labels,url --limit 200 2>/dev/null \
-            | jq '.' > "$_sub_dir/closed-issues.json" || echo "[]" > "$_sub_dir/closed-issues.json"
+            | jq '.' > "$_sub_dir/closed-issues.json" \
+            || echo "[]" > "$_sub_dir/closed-issues.json"
 
         # Open PRs
         gh pr list --repo "$_sub_repo" --state open \
             --json number,title,labels,headRefName,url 2>/dev/null \
-            | jq '.' > "$_sub_dir/open-prs.json" || echo "[]" > "$_sub_dir/open-prs.json"
+            | jq '.' > "$_sub_dir/open-prs.json" \
+            || echo "[]" > "$_sub_dir/open-prs.json"
 
         # Open issues
         gh issue list --repo "$_sub_repo" --state open \
             --json number,title,labels,url 2>/dev/null \
-            | jq '.' > "$_sub_dir/open-issues.json" || echo "[]" > "$_sub_dir/open-issues.json"
+            | jq '.' > "$_sub_dir/open-issues.json" \
+            || echo "[]" > "$_sub_dir/open-issues.json"
 
-        _sub_merged=$(jq 'length' "$_sub_dir/merged-prs.json" 2>/dev/null || echo "0")
-        _sub_closed=$(jq 'length' "$_sub_dir/closed-issues.json" 2>/dev/null || echo "0")
-        _sub_open_prs=$(jq 'length' "$_sub_dir/open-prs.json" 2>/dev/null || echo "0")
-        _sub_intake=$(jq '[.[] | select(.labels[]?.name == "intake:filed")] | length' \
-            "$_sub_dir/open-issues.json" 2>/dev/null || echo "0")
+        _sub_merged=$(jq 'length'                                                    "$_sub_dir/merged-prs.json"    2>/dev/null || echo "0")
+        _sub_closed=$(jq 'length'                                                    "$_sub_dir/closed-issues.json" 2>/dev/null || echo "0")
+        _sub_open_prs=$(jq 'length'                                                  "$_sub_dir/open-prs.json"      2>/dev/null || echo "0")
+        _sub_open_issues=$(jq 'length'                                               "$_sub_dir/open-issues.json"   2>/dev/null || echo "0")
+        _sub_intake=$(jq '[.[] | select(.labels[]?.name == "intake:filed")] | length' "$_sub_dir/open-issues.json"   2>/dev/null || echo "0")
 
         echo "[worker]     $_sub_repo: merged_prs=$_sub_merged closed_issues=$_sub_closed open_prs=$_sub_open_prs intake:filed=$_sub_intake"
 
+        _sub_entry=$(jq -n \
+            --arg  repo         "$_sub_repo" \
+            --arg  name         "$_sub_name" \
+            --arg  github_url   "https://github.com/$_sub_repo" \
+            --arg  reports_url  "https://$_sub_owner.github.io/$_sub_name/" \
+            --arg  data_dir     "$_sub_dir" \
+            --argjson prs_merged    "$_sub_merged" \
+            --argjson issues_closed "$_sub_closed" \
+            --argjson open_prs      "$_sub_open_prs" \
+            --argjson open_issues   "$_sub_open_issues" \
+            --argjson intake_filed  "$_sub_intake" \
+            '{repo:$repo,name:$name,github_url:$github_url,reports_url:$reports_url,
+              data_dir:$data_dir,is_meta:false,prs_merged:$prs_merged,
+              issues_closed:$issues_closed,open_prs:$open_prs,
+              open_issues:$open_issues,intake_filed:$intake_filed}')
+        _index_entries=$(echo "$_index_entries" | jq --argjson e "$_sub_entry" '. + [$e]')
+
+        _total_merged=$(( _total_merged + _sub_merged ))
+        _total_closed=$(( _total_closed + _sub_closed ))
+        _total_open_prs=$(( _total_open_prs + _sub_open_prs ))
+        _total_intake=$(( _total_intake + _sub_intake ))
+
         _sub_repo_summary="${_sub_repo_summary}
-- \`$_sub_repo\`: ${_sub_merged} PRs merged, ${_sub_closed} issues closed, ${_sub_open_prs} open PRs, ${_sub_intake} filed — data: \`$_sub_dir/\`"
+- \`$_sub_repo\`: ${_sub_merged} PRs merged, ${_sub_closed} issues closed, ${_sub_open_prs} open PRs, ${_sub_intake} filed"
     done
+
+    # ── Write pre-computed aggregate files ────────────────────────────────
+    # meta-index.json: one object per repo with stats + github_url + reports_url + data_dir
+    # meta-stats.json: single object with fleet-wide totals
+    echo "$_index_entries" > /tmp/scout-data/meta-index.json
+
+    jq -n \
+        --argjson merged   "$_total_merged" \
+        --argjson closed   "$_total_closed" \
+        --argjson open_prs "$_total_open_prs" \
+        --argjson intake   "$_total_intake" \
+        '{total_prs_merged:$merged,total_issues_closed:$closed,total_open_prs:$open_prs,total_intake_filed:$intake}' \
+        > /tmp/scout-data/meta-stats.json
+
+    echo "[worker]   Meta totals: merged=$_total_merged closed=$_total_closed open_prs=$_total_open_prs intake=$_total_intake"
 fi
 
 # ── Build startup context for situation report ───────────────────────────────
@@ -268,9 +339,19 @@ if [ "$_is_meta_report" = true ]; then
 
 **Mode: META-REPORT** — Follow \`/worker/agents/tasks/generate-meta-report.md\` instead of \`generate-report.md\`.
 
-**Subordinate repos (data pre-gathered):**${_sub_repo_summary}
+**Aggregate totals across all repos:**
+- PRs merged: ${_total_merged}
+- Issues closed: ${_total_closed}
+- Open PRs: ${_total_open_prs}
+- Filed issues (intake:filed): ${_total_intake}
 
-Each subordinate repo's data directory contains the same files as the meta repo:
+**Repos in this meta-report (meta repo first, then subordinates):**${_sub_repo_summary}
+
+**Pre-computed files (read these — no arithmetic needed):**
+- \`/tmp/scout-data/meta-index.json\` — array of repo objects; each has: \`repo\`, \`name\`, \`github_url\`, \`reports_url\` (GitHub Pages Scout reports), \`data_dir\`, \`is_meta\`, \`prs_merged\`, \`issues_closed\`, \`open_prs\`, \`open_issues\`, \`intake_filed\`
+- \`/tmp/scout-data/meta-stats.json\` — fleet-wide totals: \`total_prs_merged\`, \`total_issues_closed\`, \`total_open_prs\`, \`total_intake_filed\`
+
+Each repo's activity data is at its \`data_dir\` (same file structure as the meta repo):
 \`git-log.txt\`, \`merged-prs.json\`, \`closed-issues.json\`, \`open-prs.json\`, \`open-issues.json\`."
 fi
 
