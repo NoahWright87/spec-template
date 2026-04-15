@@ -216,6 +216,7 @@ if [ -n "${SCOUT_SUB_SCOUTS:-}" ]; then
     for _entry in $SCOUT_SUB_SCOUTS; do
         _sub_repo=$(echo "$_entry" | cut -d'|' -f1)
         _sub_scout_dir=$(echo "$_entry" | cut -d'|' -f2)
+        _sub_scout_dir="${_sub_scout_dir%/}"   # strip any trailing slash
         _sub_owner=$(echo "$_sub_repo" | cut -d/ -f1)
         _sub_name=$(echo "$_sub_repo" | cut -d/ -f2)
         _sub_dir="/tmp/scout-data/subordinates/$_sub_owner/$_sub_name"
@@ -254,10 +255,10 @@ if [ -n "${SCOUT_SUB_SCOUTS:-}" ]; then
                     _has_report=true
                     _report_date="$_latest_date"
                     # Extract stats from the child's SprintReport summary
-                    _sub_merged=$(jq '.summary.stats[] | select(.label=="PRs Merged")    | .value // 0' "$_sub_dir/latest-report.json" 2>/dev/null || echo "0")
-                    _sub_closed=$(jq '.summary.stats[] | select(.label=="Issues Closed") | .value // 0' "$_sub_dir/latest-report.json" 2>/dev/null || echo "0")
-                    _sub_open_prs=$(jq '.summary.stats[] | select(.label=="Open PRs")    | .value // 0' "$_sub_dir/latest-report.json" 2>/dev/null || echo "0")
-                    _sub_intake=$(jq '.summary.stats[] | select(.label=="Filed Issues")  | .value // 0' "$_sub_dir/latest-report.json" 2>/dev/null || echo "0")
+                    _sub_merged=$(jq -r 'first(.summary.stats[]? | select(.label=="PRs Merged")    | (.value | tonumber? // 0)) // 0' "$_sub_dir/latest-report.json" 2>/dev/null || echo "0")
+                    _sub_closed=$(jq -r 'first(.summary.stats[]? | select(.label=="Issues Closed") | (.value | tonumber? // 0)) // 0' "$_sub_dir/latest-report.json" 2>/dev/null || echo "0")
+                    _sub_open_prs=$(jq -r 'first(.summary.stats[]? | select(.label=="Open PRs")    | (.value | tonumber? // 0)) // 0' "$_sub_dir/latest-report.json" 2>/dev/null || echo "0")
+                    _sub_intake=$(jq -r 'first(.summary.stats[]? | select(.label=="Filed Issues")  | (.value | tonumber? // 0)) // 0' "$_sub_dir/latest-report.json" 2>/dev/null || echo "0")
                     echo "[worker]       report from $_report_date — merged=$_sub_merged closed=$_sub_closed open_prs=$_sub_open_prs intake=$_sub_intake"
                 fi
             fi
@@ -275,7 +276,7 @@ if [ -n "${SCOUT_SUB_SCOUTS:-}" ]; then
             --arg  reports_url "https://$_sub_owner.github.io/$_sub_name/" \
             --arg  data_dir    "$_sub_dir" \
             --arg  report_date "${_report_date:-}" \
-            --arg  report_file "${_sub_dir}/latest-report.json" \
+            --arg  report_file "$([ "$_has_report" = true ] && echo "${_sub_dir}/latest-report.json" || echo "")" \
             --argjson has_report    "$_has_report" \
             --argjson prs_merged    "$_sub_merged" \
             --argjson issues_closed "$_sub_closed" \
