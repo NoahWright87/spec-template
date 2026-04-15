@@ -173,17 +173,18 @@ echo "$_closed_issues" | jq '.' > /tmp/scout-data/closed-issues.json
 echo "$_open_prs" | jq '.' > /tmp/scout-data/open-prs.json
 echo "$_open_issues" | jq '.' > /tmp/scout-data/open-issues.json
 
-# ── Gather subordinate repo data (meta-report mode) ──────────────────────────
-# When SCOUT_SUBORDINATE_REPOS is set, fetch data for each subordinate repo
-# using the GitHub API, then pre-compute aggregate stats and a repo index so
-# Claude only needs to synthesize narratives and group themes — no arithmetic.
+# ── Fetch sub-scout reports (meta-report mode) ───────────────────────────────
+# When SCOUT_SUB_SCOUTS is set, read each sub-scout's already-generated
+# data.json rather than re-fetching raw GitHub data. Three API calls per
+# sub-scout: config → directory listing → report file.
 _is_meta_report=false
 _sub_repo_summary=""
+_missing_scouts=""
 
-if [ -n "${SCOUT_SUBORDINATE_REPOS:-}" ]; then
+if [ -n "${SCOUT_SUB_SCOUTS:-}" ]; then
     _is_meta_report=true
-    echo "[worker]   Meta-report mode: gathering data for subordinate repos..."
-    mkdir -p /tmp/scout-data/repos
+    echo "[worker]   Meta-report mode: reading sub-scout reports..."
+    mkdir -p /tmp/scout-data/subordinates
 
     # ── Seed meta-index with the meta repo entry ─────────────────────────
     _meta_owner=$(echo "$TARGET_REPO" | cut -d/ -f1)
@@ -202,8 +203,8 @@ if [ -n "${SCOUT_SUBORDINATE_REPOS:-}" ]; then
         --argjson open_issues   "$_new_issues_count" \
         --argjson intake_filed  "$_intake_count" \
         '[{repo:$repo,name:$name,github_url:$github_url,reports_url:$reports_url,
-           data_dir:$data_dir,is_meta:true,prs_merged:$prs_merged,
-           issues_closed:$issues_closed,open_prs:$open_prs,
+           data_dir:$data_dir,is_meta:true,has_report:true,report_date:"current",
+           prs_merged:$prs_merged,issues_closed:$issues_closed,open_prs:$open_prs,
            open_issues:$open_issues,intake_filed:$intake_filed}]')
 
     _total_merged=$_merged_prs_count
@@ -211,83 +212,96 @@ if [ -n "${SCOUT_SUBORDINATE_REPOS:-}" ]; then
     _total_open_prs=$_meta_open_prs_count
     _total_intake=$_intake_count
 
-    # ── Fetch each subordinate repo and append to index ───────────────────
-    for _sub_repo in $SCOUT_SUBORDINATE_REPOS; do
+    # ── Fetch each sub-scout's latest data.json ───────────────────────────
+    for _entry in $SCOUT_SUB_SCOUTS; do
+        _sub_repo=$(echo "$_entry" | cut -d'|' -f1)
+        _sub_scout_dir=$(echo "$_entry" | cut -d'|' -f2)
         _sub_owner=$(echo "$_sub_repo" | cut -d/ -f1)
         _sub_name=$(echo "$_sub_repo" | cut -d/ -f2)
-        _sub_dir="/tmp/scout-data/repos/$_sub_owner/$_sub_name"
+        _sub_dir="/tmp/scout-data/subordinates/$_sub_owner/$_sub_name"
         mkdir -p "$_sub_dir"
 
-        echo "[worker]     Fetching: $_sub_repo"
+        echo "[worker]     Sub-scout: $_sub_repo (scout_dir: $_sub_scout_dir)"
 
-        # Commits via GitHub API (since baseline date)
-        gh api --paginate \
-            "repos/$_sub_repo/commits?since=${_baseline_date}T00:00:00Z&per_page=100" \
-            --jq '.[] | "\(.sha[0:7]) \(.commit.message | split("\n")[0])"' \
-            2>/dev/null > "$_sub_dir/git-log.txt" \
-            || echo "(no commits)" > "$_sub_dir/git-log.txt"
+        # 1. Read the sub-scout's config to find its reports_dir
+        _sub_config_b64=$(gh api "repos/$_sub_repo/contents/$_sub_scout_dir/config.yaml" \
+            --jq '.content // empty' 2>/dev/null || echo "")
+        if [ -n "$_sub_config_b64" ]; then
+            _sub_reports_dir=$(printf '%s' "$_sub_config_b64" | base64 -d 2>/dev/null \
+                | yq '.reports_dir // "docs/reports"' 2>/dev/null || echo "docs/reports")
+        else
+            _sub_reports_dir="docs/reports"
+            echo "[worker]       no scout config found — defaulting reports_dir to docs/reports"
+        fi
 
-        # Merged PRs
-        gh pr list --repo "$_sub_repo" --state merged \
-            --json number,title,mergedAt,author,body,url --limit 200 2>/dev/null \
-            | jq '.' > "$_sub_dir/merged-prs.json" \
-            || echo "[]" > "$_sub_dir/merged-prs.json"
+        # 2. Find the latest report date folder
+        _latest_date=$(gh api "repos/$_sub_repo/contents/$_sub_reports_dir" \
+            --jq '[.[] | select(.type=="dir") | .name] | sort | last // empty' \
+            2>/dev/null || echo "")
 
-        # Closed issues
-        gh issue list --repo "$_sub_repo" --state closed \
-            --json number,title,closedAt,labels,url --limit 200 2>/dev/null \
-            | jq '.' > "$_sub_dir/closed-issues.json" \
-            || echo "[]" > "$_sub_dir/closed-issues.json"
+        # 3. Fetch the report file
+        _has_report=false
+        _report_date=""
+        _sub_merged=0; _sub_closed=0; _sub_open_prs=0; _sub_intake=0
 
-        # Open PRs
-        gh pr list --repo "$_sub_repo" --state open \
-            --json number,title,labels,headRefName,url 2>/dev/null \
-            | jq '.' > "$_sub_dir/open-prs.json" \
-            || echo "[]" > "$_sub_dir/open-prs.json"
+        if [ -n "$_latest_date" ]; then
+            _report_b64=$(gh api \
+                "repos/$_sub_repo/contents/$_sub_reports_dir/$_latest_date/data.json" \
+                --jq '.content // empty' 2>/dev/null || echo "")
+            if [ -n "$_report_b64" ]; then
+                if printf '%s' "$_report_b64" | base64 -d 2>/dev/null \
+                        > "$_sub_dir/latest-report.json"; then
+                    _has_report=true
+                    _report_date="$_latest_date"
+                    # Extract stats from the child's SprintReport summary
+                    _sub_merged=$(jq '.summary.stats[] | select(.label=="PRs Merged")    | .value // 0' "$_sub_dir/latest-report.json" 2>/dev/null || echo "0")
+                    _sub_closed=$(jq '.summary.stats[] | select(.label=="Issues Closed") | .value // 0' "$_sub_dir/latest-report.json" 2>/dev/null || echo "0")
+                    _sub_open_prs=$(jq '.summary.stats[] | select(.label=="Open PRs")    | .value // 0' "$_sub_dir/latest-report.json" 2>/dev/null || echo "0")
+                    _sub_intake=$(jq '.summary.stats[] | select(.label=="Filed Issues")  | .value // 0' "$_sub_dir/latest-report.json" 2>/dev/null || echo "0")
+                    echo "[worker]       report from $_report_date — merged=$_sub_merged closed=$_sub_closed open_prs=$_sub_open_prs intake=$_sub_intake"
+                fi
+            fi
+        fi
 
-        # Open issues
-        gh issue list --repo "$_sub_repo" --state open \
-            --json number,title,labels,url 2>/dev/null \
-            | jq '.' > "$_sub_dir/open-issues.json" \
-            || echo "[]" > "$_sub_dir/open-issues.json"
-
-        _sub_merged=$(jq 'length'                                                    "$_sub_dir/merged-prs.json"    2>/dev/null || echo "0")
-        _sub_closed=$(jq 'length'                                                    "$_sub_dir/closed-issues.json" 2>/dev/null || echo "0")
-        _sub_open_prs=$(jq 'length'                                                  "$_sub_dir/open-prs.json"      2>/dev/null || echo "0")
-        _sub_open_issues=$(jq 'length'                                               "$_sub_dir/open-issues.json"   2>/dev/null || echo "0")
-        _sub_intake=$(jq '[.[] | select(.labels[]?.name == "intake:filed")] | length' "$_sub_dir/open-issues.json"   2>/dev/null || echo "0")
-
-        echo "[worker]     $_sub_repo: merged_prs=$_sub_merged closed_issues=$_sub_closed open_prs=$_sub_open_prs intake:filed=$_sub_intake"
+        if [ "$_has_report" = false ]; then
+            echo "[worker]       ⚠ no report available yet"
+            _missing_scouts="${_missing_scouts} $_sub_repo"
+        fi
 
         _sub_entry=$(jq -n \
-            --arg  repo         "$_sub_repo" \
-            --arg  name         "$_sub_name" \
-            --arg  github_url   "https://github.com/$_sub_repo" \
-            --arg  reports_url  "https://$_sub_owner.github.io/$_sub_name/" \
-            --arg  data_dir     "$_sub_dir" \
+            --arg  repo        "$_sub_repo" \
+            --arg  name        "$_sub_name" \
+            --arg  github_url  "https://github.com/$_sub_repo" \
+            --arg  reports_url "https://$_sub_owner.github.io/$_sub_name/" \
+            --arg  data_dir    "$_sub_dir" \
+            --arg  report_date "${_report_date:-}" \
+            --arg  report_file "${_sub_dir}/latest-report.json" \
+            --argjson has_report    "$_has_report" \
             --argjson prs_merged    "$_sub_merged" \
             --argjson issues_closed "$_sub_closed" \
             --argjson open_prs      "$_sub_open_prs" \
-            --argjson open_issues   "$_sub_open_issues" \
             --argjson intake_filed  "$_sub_intake" \
             '{repo:$repo,name:$name,github_url:$github_url,reports_url:$reports_url,
-              data_dir:$data_dir,is_meta:false,prs_merged:$prs_merged,
-              issues_closed:$issues_closed,open_prs:$open_prs,
-              open_issues:$open_issues,intake_filed:$intake_filed}')
+              data_dir:$data_dir,is_meta:false,has_report:$has_report,
+              report_date:$report_date,report_file:$report_file,
+              prs_merged:$prs_merged,issues_closed:$issues_closed,
+              open_prs:$open_prs,intake_filed:$intake_filed}')
         _index_entries=$(echo "$_index_entries" | jq --argjson e "$_sub_entry" '. + [$e]')
 
-        _total_merged=$(( _total_merged + _sub_merged ))
-        _total_closed=$(( _total_closed + _sub_closed ))
-        _total_open_prs=$(( _total_open_prs + _sub_open_prs ))
-        _total_intake=$(( _total_intake + _sub_intake ))
-
-        _sub_repo_summary="${_sub_repo_summary}
-- \`$_sub_repo\`: ${_sub_merged} PRs merged, ${_sub_closed} issues closed, ${_sub_open_prs} open PRs, ${_sub_intake} filed"
+        if [ "$_has_report" = true ]; then
+            _total_merged=$(( _total_merged + _sub_merged ))
+            _total_closed=$(( _total_closed + _sub_closed ))
+            _total_open_prs=$(( _total_open_prs + _sub_open_prs ))
+            _total_intake=$(( _total_intake + _sub_intake ))
+            _sub_repo_summary="${_sub_repo_summary}
+- \`$_sub_repo\`: report from ${_report_date} — ${_sub_merged} PRs merged, ${_sub_closed} issues closed, ${_sub_open_prs} open PRs, ${_sub_intake} filed"
+        else
+            _sub_repo_summary="${_sub_repo_summary}
+- \`$_sub_repo\`: ⚠ no report available yet"
+        fi
     done
 
     # ── Write pre-computed aggregate files ────────────────────────────────
-    # meta-index.json: one object per repo with stats + github_url + reports_url + data_dir
-    # meta-stats.json: single object with fleet-wide totals
     echo "$_index_entries" > /tmp/scout-data/meta-index.json
 
     jq -n \
@@ -295,10 +309,13 @@ if [ -n "${SCOUT_SUBORDINATE_REPOS:-}" ]; then
         --argjson closed   "$_total_closed" \
         --argjson open_prs "$_total_open_prs" \
         --argjson intake   "$_total_intake" \
-        '{total_prs_merged:$merged,total_issues_closed:$closed,total_open_prs:$open_prs,total_intake_filed:$intake}' \
+        '{total_prs_merged:$merged,total_issues_closed:$closed,
+          total_open_prs:$open_prs,total_intake_filed:$intake}' \
         > /tmp/scout-data/meta-stats.json
 
+    _missing_scouts=$(echo "$_missing_scouts" | xargs)  # trim whitespace
     echo "[worker]   Meta totals: merged=$_total_merged closed=$_total_closed open_prs=$_total_open_prs intake=$_total_intake"
+    [ -n "$_missing_scouts" ] && echo "[worker]   Missing sub-scout reports: $_missing_scouts"
 fi
 
 # ── Build startup context for situation report ───────────────────────────────
@@ -331,7 +348,7 @@ do not re-fetch from GitHub or git.
 with \`next_report_date: \"${_next_report_date}\"\`. Commit both the report and the
 config update in the same commit."
 
-# Append meta-report section when subordinate repos are configured
+# Append meta-report section when sub-scouts are configured
 if [ "$_is_meta_report" = true ]; then
     _startup_context="${_startup_context}
 
@@ -339,20 +356,21 @@ if [ "$_is_meta_report" = true ]; then
 
 **Mode: META-REPORT** — Follow \`/worker/agents/tasks/generate-meta-report.md\` instead of \`generate-report.md\`.
 
-**Aggregate totals across all repos:**
+**Aggregate totals (meta repo + sub-scouts with available reports):**
 - PRs merged: ${_total_merged}
 - Issues closed: ${_total_closed}
 - Open PRs: ${_total_open_prs}
 - Filed issues (intake:filed): ${_total_intake}
 
-**Repos in this meta-report (meta repo first, then subordinates):**${_sub_repo_summary}
+**Sub-scouts:**${_sub_repo_summary}
 
-**Pre-computed files (read these — no arithmetic needed):**
-- \`/tmp/scout-data/meta-index.json\` — array of repo objects; each has: \`repo\`, \`name\`, \`github_url\`, \`reports_url\` (GitHub Pages Scout reports), \`data_dir\`, \`is_meta\`, \`prs_merged\`, \`issues_closed\`, \`open_prs\`, \`open_issues\`, \`intake_filed\`
+**Missing sub-scout reports:** ${_missing_scouts:-none}
+
+**Pre-computed files:**
+- \`/tmp/scout-data/meta-index.json\` — one object per repo with: \`repo\`, \`name\`, \`github_url\`, \`reports_url\` (GitHub Pages), \`data_dir\`, \`is_meta\`, \`has_report\`, \`report_date\`, \`report_file\` (path to fetched data.json, when \`has_report\` is true), \`prs_merged\`, \`issues_closed\`, \`open_prs\`, \`intake_filed\`
 - \`/tmp/scout-data/meta-stats.json\` — fleet-wide totals: \`total_prs_merged\`, \`total_issues_closed\`, \`total_open_prs\`, \`total_intake_filed\`
 
-Each repo's activity data is at its \`data_dir\` (same file structure as the meta repo):
-\`git-log.txt\`, \`merged-prs.json\`, \`closed-issues.json\`, \`open-prs.json\`, \`open-issues.json\`."
+Sub-scout reports are at each entry's \`report_file\` path (SprintReport JSON — already summarized by that Scout)."
 fi
 
 # Export for use by the agent

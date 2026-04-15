@@ -2,43 +2,31 @@
 
 ## Purpose
 
-Generate a single progress report that aggregates activity across the meta repo and its subordinate repos. The report is saved as `{reports_dir}/{date}/data.json` in the [repo-report](https://github.com/NoahWright87/repo-report) `SprintReport` format. After generating the report, advance `next_report_date` in `.agents/scout/config.yaml`.
+Generate a combined progress report for the meta repo and its sub-scouts. The report covers:
+1. The meta repo's own activity (from raw data in `/tmp/scout-data/`, same as a normal Scout run)
+2. A summary section per sub-scout, drawn from each sub-scout's already-generated `data.json`
 
-The startup script has done all the data-gathering and arithmetic. Your job is synthesis: write narratives, group PRs into themes, and assemble the final JSON.
+The output is saved as `{reports_dir}/{date}/data.json` in the [repo-report](https://github.com/NoahWright87/repo-report) `SprintReport` format. After generating the report, advance `next_report_date` in `.agents/scout/config.yaml`.
 
 ## Preconditions
 
 - The startup script has run and populated:
-  - `/tmp/scout-data/` — meta repo activity data
-  - `/tmp/scout-data/repos/{owner}/{repo}/` — per-subordinate-repo activity data
-  - `/tmp/scout-data/meta-index.json` — pre-built repo index with stats and URLs
-  - `/tmp/scout-data/meta-stats.json` — pre-computed fleet-wide totals
+  - `/tmp/scout-data/` — meta repo activity (same files as a normal Scout run)
+  - `/tmp/scout-data/meta-index.json` — repo index with stats, URLs, and `has_report` flags
+  - `/tmp/scout-data/meta-stats.json` — fleet-wide aggregate totals
+  - `/tmp/scout-data/subordinates/{owner}/{repo}/latest-report.json` — fetched sub-scout reports (when `has_report: true`)
 
 ## Steps
 
 ### Step 1 — Read pre-computed data
 
-Read the **Situation Report** for the report date, reports directory, and next report date.
+Read the **Situation Report** for the report date, reports directory, next report date, and the list of sub-scouts (including which have reports and which don't).
 
-Then read these pre-computed files (do not re-fetch from GitHub):
-
-- `/tmp/scout-data/meta-index.json` — array of repo objects, each with:
-  - `repo` — full `owner/repo` slug
-  - `name` — repo name only
-  - `github_url` — `https://github.com/owner/repo`
-  - `reports_url` — `https://owner.github.io/repo/` (this repo's Scout reports page)
-  - `data_dir` — local path to this repo's data files
-  - `is_meta` — `true` for the meta repo, `false` for subordinates
-  - `prs_merged`, `issues_closed`, `open_prs`, `open_issues`, `intake_filed` — pre-counted
-
-- `/tmp/scout-data/meta-stats.json` — fleet totals:
-  - `total_prs_merged`, `total_issues_closed`, `total_open_prs`, `total_intake_filed`
-
-For each repo in the index, read its `data_dir` files for full detail:
-- `merged-prs.json` — merged PRs with titles, URLs, authors, and body
-- `open-prs.json` — open PRs
-- `open-issues.json` — open issues (filter for `intake:filed` label)
-- `git-log.txt` — commits since baseline (for contributor counts)
+Read:
+- `/tmp/scout-data/meta-index.json` — index of all repos
+- `/tmp/scout-data/meta-stats.json` — aggregate totals
+- `/tmp/scout-data/merged-prs.json`, `closed-issues.json`, `open-prs.json`, `open-issues.json`, `git-log.txt` — meta repo raw data
+- For each sub-scout where `has_report: true`: read its `report_file` (the fetched `data.json`)
 
 ### Step 2 — Create output directory
 
@@ -55,47 +43,52 @@ Use the template at `.agents/scout/config.yaml` → `report_instructions` for sc
 | Field | Value |
 |-------|-------|
 | `title` | `"Progress Report — {date}"` |
-| `team` | Org name (the owner portion of `TARGET_REPO`, e.g. `"myorg"`) |
+| `team` | Org name (owner portion of `TARGET_REPO`) |
 | `dateRange` | `{ "start": "{baseline_date}", "end": "{date}" }` |
-| `repos` | One entry per repo from `meta-index.json` — use `reports_url` as `url` for subordinate repos so readers can navigate to their full Scout reports; use `github_url` for the meta repo |
+| `repos` | One entry per repo from `meta-index.json`; use `reports_url` as `url` for sub-scouts, `github_url` for the meta repo |
 | `generatedAt` | Current ISO 8601 timestamp |
 
 #### `summary` slide
 
-- **`stats`**: Use values from `meta-stats.json` directly — no arithmetic needed:
-  - PRs Merged → `total_prs_merged`
-  - Issues Closed → `total_issues_closed`
-  - Open PRs → `total_open_prs`
-  - Filed Issues → `total_intake_filed`
-- **`highlights`**: 3–5 sentence narrative covering all repos — what shipped, what's active, notable cross-repo patterns.
-- **`detailBlocks`**: One `contributor-list` block. Aggregate contributors across all repos:
-  - For each repo, read `merged-prs.json` and count `prsMerged` per `author.login`
-  - For each repo, parse `git-log.txt` lines (`<sha> <message>`) and count commits per author prefix (use the author field from the PR list, not git log, for accuracy — git-log.txt is for volume reference)
-  - Merge counts by `username` across repos
-  - Include `name`, `username`, `commits`, `prsMerged`
+- **`stats`**: Use values from `meta-stats.json` directly — `total_prs_merged`, `total_issues_closed`, `total_open_prs`, `total_intake_filed` (only counts repos where `has_report: true`)
+- **`highlights`**: 3–5 sentence narrative covering the meta repo's own activity and any notable patterns across sub-scouts
+- **`detailBlocks`**: One `contributor-list` block from the meta repo's own `merged-prs.json` and `git-log.txt` (same logic as `generate-report.md`)
 
-#### `themes` array
+#### `themes` array — meta repo own activity
 
-**Completed work** — for each repo that has merged PRs, read its `merged-prs.json` and group PRs into natural themes. For each theme, produce a slide:
+Follow the same grouping logic as `generate-report.md` for the meta repo's own data:
+
+- Completed work — group `merged-prs.json` entries into named themes; each theme slug prefixed `meta-` (e.g. `meta-auth-improvements`)
+- In Progress — open PRs from `open-prs.json` (omit if none)
+- Upcoming — `intake:filed` issues from `open-issues.json` (omit if none)
+
+#### `themes` array — sub-scout summaries
+
+For each sub-scout in `meta-index.json`, append one theme slide:
+
+**Sub-scout with `has_report: true`** — read its `report_file` and extract:
+- `summary.highlights` for the description
+- Up to 3 top themes (by number of PRs) for detail
 
 ```json
 {
   "type": "theme",
-  "slug": "{repo-name}-{theme-slug}",
-  "title": "{owner}/{repo} — {Group Name}",
+  "slug": "{sub-name}-summary",
+  "title": "{owner}/{repo}",
   "status": "completed",
-  "description": "<one sentence summary of what this group accomplished>",
+  "description": "<first sentence of sub-scout's summary.highlights>",
   "detailBlocks": [
     {
       "type": "link-list",
-      "title": "Merged PRs",
+      "title": "Highlights",
       "links": [
         {
-          "label": "<PR title>",
-          "url": "<PR url>",
-          "type": "pr",
-          "description": "<one sentence from PR body — what problem it solved>"
+          "label": "<theme title from sub-scout report>",
+          "url": "<reports_url from meta-index>",
+          "type": "link",
+          "description": "<theme description from sub-scout report>"
         }
+        // repeat for up to 3 themes
       ]
     },
     {
@@ -103,10 +96,10 @@ Use the template at `.agents/scout/config.yaml` → `report_instructions` for sc
       "title": "Full Report",
       "links": [
         {
-          "label": "See all {owner}/{repo} activity →",
-          "url": "<reports_url from meta-index.json for this repo>",
+          "label": "See full {owner}/{repo} Scout report →",
+          "url": "<reports_url from meta-index>",
           "type": "link",
-          "description": "Detailed Scout report for this repo"
+          "description": "Report from {report_date}"
         }
       ]
     }
@@ -114,100 +107,61 @@ Use the template at `.agents/scout/config.yaml` → `report_instructions` for sc
 }
 ```
 
-Use the `reports_url` from `meta-index.json` for the "Full Report" link. This lets readers drill into a single repo's Scout reports for more detail.
-
-If only one repo has merged PRs, omit the `{owner}/{repo} —` prefix in the theme title to keep the report clean.
-
-**In Progress** — one combined theme for all open PRs across repos:
+**Sub-scout with `has_report: false`** — include a placeholder theme:
 
 ```json
 {
   "type": "theme",
-  "slug": "in-progress",
-  "title": "In Progress",
+  "slug": "{sub-name}-pending",
+  "title": "{owner}/{repo} — Report Pending",
   "status": "in-progress",
-  "detailBlocks": [
-    {
-      "type": "link-list",
-      "title": "Open PRs",
-      "links": [
-        {
-          "label": "<PR title>",
-          "url": "<PR url>",
-          "type": "pr",
-          "description": "<owner/repo — branch name or brief status note>"
-        }
-      ]
-    }
-  ]
+  "description": "Scout report has not run yet for this repo. Will be included in the next report cycle.",
+  "detailBlocks": []
 }
 ```
 
-Omit this theme if there are no open PRs across any repo.
+### Step 4 — Handle missing sub-scouts (PR comment)
 
-**Upcoming** — one combined theme for all `intake:filed` issues across repos:
+If **any** sub-scouts have `has_report: false`:
 
-```json
-{
-  "type": "theme",
-  "slug": "upcoming",
-  "title": "Upcoming",
-  "status": "in-progress",
-  "detailBlocks": [
-    {
-      "type": "link-list",
-      "title": "Filed Issues",
-      "links": [
-        {
-          "label": "<issue title>",
-          "url": "<issue url>",
-          "type": "issue",
-          "description": "<owner/repo — size label if present, e.g. 'size: M'>"
-        }
-      ]
-    }
-  ]
-}
-```
+After writing the report file, post a comment on the PR noting which sub-scout reports are not yet available:
 
-Omit this theme if there are no `intake:filed` issues across any repo.
-
-### Step 4 — Write the report
-
-Save the complete JSON object to `{reports_dir}/{date}/data.json`.
-
-Validate that the JSON is well-formed before writing:
 ```bash
-cat {reports_dir}/{date}/data.json | jq . > /dev/null
+gh pr comment "$WORKER_PR_NUMBER" --body "🤖 Claude ($AGENT_NAME): The following sub-scout reports were not available for this cycle and will be included once their Scout has run: <list repos>. This report will be updated automatically on the next scheduled run."
 ```
 
-### Step 5 — Advance next_report_date
+### Step 5 — Write the report
 
-The next report date is in the Situation Report. Update `.agents/scout/config.yaml`:
+Save the complete JSON to `{reports_dir}/{date}/data.json` and validate:
 
-```yaml
-next_report_date: "{next_report_date}"
+```bash
+jq . {reports_dir}/{date}/data.json > /dev/null
 ```
 
-**IMPORTANT:** Commit the report and the config update in the same commit.
+### Step 6 — Advance next_report_date
+
+Update `.agents/scout/config.yaml` with the new `next_report_date` from the Situation Report.
+
+**IMPORTANT:** Commit the report and config update in the same commit.
 
 ## Preferred tools
 
-- **Read** — read `meta-index.json`, `meta-stats.json`, per-repo data files, template, config
-- **Write** — create `{reports_dir}/{date}/data.json`
-- **Edit** — update `.agents/scout/config.yaml`
-- **Bash** — `mkdir`, `jq .` (validation only)
+- **Read** — `meta-index.json`, `meta-stats.json`, sub-scout `report_file` paths, meta repo data files, template, config
+- **Write** — `{reports_dir}/{date}/data.json`
+- **Edit** — `.agents/scout/config.yaml`
+- **Bash** — `mkdir`, `jq .` (validation), `gh pr comment` (missing sub-scout notice)
 
 ## Inputs
 
-- `/tmp/scout-data/meta-index.json` — pre-built repo index with stats and URLs
-- `/tmp/scout-data/meta-stats.json` — pre-computed fleet-wide totals
-- `/tmp/scout-data/` and `/tmp/scout-data/repos/{owner}/{repo}/` — per-repo activity files
-- Situation Report — report date, reports directory, next report date
-- `.agents/scout/config.yaml` — report template path, reports directory
-- `.agents/scout/templates/` — JSON example template (schema reference)
+- `/tmp/scout-data/meta-index.json` — repo index with `has_report`, `report_file`, stats, URLs
+- `/tmp/scout-data/meta-stats.json` — pre-computed fleet totals
+- `/tmp/scout-data/` — meta repo raw activity data
+- Sub-scout `report_file` paths (from `meta-index.json`) — already-processed SprintReport JSON
+- Situation Report — report date, reports directory, next report date, missing sub-scouts list
+- `.agents/scout/config.yaml` — template path, reports directory
 
 ## Outputs
 
-- `{reports_dir}/{date}/data.json` — meta progress report in SprintReport JSON format
+- `{reports_dir}/{date}/data.json` — combined SprintReport
 - `.agents/scout/config.yaml` — updated `next_report_date`
+- PR comment (when sub-scouts are missing)
